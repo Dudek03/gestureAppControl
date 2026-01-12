@@ -1,3 +1,5 @@
+import math
+
 import pygame as pg
 
 pg.init()
@@ -12,6 +14,7 @@ class Player:
     def __init__(self):
         self.player_pos_curr = (0, 0)
         self.player_pos_last = (0, 0)
+        self.player_vect = pg.Vector2(0, 0)
         self.player_size = min(screen_size[0], screen_size[1]) * 0.05
 
     def update_player_pos(self):
@@ -20,6 +23,14 @@ class Player:
 
     def update_player_size(self):
         self.player_size = min(screen_size[0], screen_size[1]) * 0.05
+
+    def calculate_player_vector(self):
+        self.player_vect = Vector_handler.calculate_vector(
+            self.player_pos_curr, self.player_pos_last
+        )
+
+    def get_player_vect(self):
+        return self.player_vect
 
     def get_player_pos(self):
         return self.player_pos_curr
@@ -61,15 +72,24 @@ class Puck:
         self.puck_size = min(screen_size[0], screen_size[1]) * 0.05
 
     def bounce_x(self):
-        pass
+        self.puck_vector_normalized[0] *= -1
 
     def bounce_y(self):
-        pass
+        self.puck_vector_normalized[1] *= -1
+
+    def get_puck_size(self):
+        return self.puck_size
+
+    def get_puck_pos(self):
+        return self.puck_pos_curr
+
+    def get_puck_vect(self):
+        return (self.puck_vector_normalized, self.puck_vector_size)
 
     def update(self):
-        # add vector * length
-        # change length
-        pass
+        self.puck_pos_last = self.puck_pos_curr
+        self.puck_pos_curr = self.puck_vector_normalized * self.puck_vector_size
+        self.puck_vector_size -= 0.01
 
     def update_puck_size(self):
         self.puck_size = min(screen_size[0], screen_size[1]) * 0.05
@@ -112,6 +132,7 @@ class Game:
     def __init__(self):
         self.board = Board()
         self.player = Player()
+        self.puck = Puck()
 
     def board_validation(self, pos, size):
         board_boundaries = self.board.get_board_bounds()
@@ -120,13 +141,13 @@ class Game:
         if pos[0] - size <= board_boundaries[2]:
             pos[0] = board_boundaries[2] + size
         # right bound
-        if pos[0] + size >= board_boundaries[3]:
+        elif pos[0] + size >= board_boundaries[3]:
             pos[0] = board_boundaries[3] - size
         # top bound
         if pos[1] - size <= board_boundaries[0]:
             pos[1] = board_boundaries[0] + size
         # bottom bound
-        if pos[1] + size >= board_boundaries[1]:
+        elif pos[1] + size >= board_boundaries[1]:
             pos[1] = board_boundaries[1] - size
         pos = tuple(pos)
         return pos
@@ -144,10 +165,41 @@ class Game:
         return pos
 
     def puck_validate(self, pos, size):
-        pass
+        board_boundaries = self.board.get_board_bounds()
+        pos = list(pos)
+        # left bound
+        if pos[0] - size <= board_boundaries[2]:
+            self.puck.bounce_x()
+        # right bound
+        elif pos[0] + size >= board_boundaries[3]:
+            self.puck.bounce_x()
+        # top bound
+        if pos[1] - size <= board_boundaries[0]:
+            self.puck.bounce_y()
+        # bottom bound
+        elif pos[1] + size >= board_boundaries[1]:
+            self.puck.bounce_y()
+        pos = tuple(pos)
+        # TODO
+        return pos
 
-    def puck_player_collision(self, player_pos, puck_pos):
-        pass
+    def puck_player_collision(self, player_pos, player_size):
+        puck_pos = self.puck.get_puck_pos()
+        puck_size = self.puck.get_puck_size()
+        return player_size + puck_size <= math.sqrt(
+            (player_pos[0] + puck_pos[0]) ** 2 + (player_pos[1] + puck_pos[1]) ** 2
+        )
+
+    def calculate_puck_vect_on_player_collide(self, player):
+        puck_vect = self.puck.get_puck_vect()
+        self.player.calculate_player_vector()
+        player_vect = self.player.get_player_vect()
+        player_vect_len = Vector_handler.get_vector_length(player_vect)
+        player_vect_norm = Vector_handler.normalize_vector(player_vect)
+        collide_vect = Vector_handler.calculate_vector(
+            self.player.get_player_pos, self.puck.get_puck_pos
+        )
+        collide_vect = Vector_handler.normalize_vector(collide_vect)
 
     def on_display_resize(self):
         self.player.update_player_size()
