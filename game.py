@@ -1,5 +1,3 @@
-import math
-
 import pygame as pg
 
 pg.init()
@@ -65,10 +63,10 @@ class Vector_handler:
 
 class Puck:
     def __init__(self):
-        self.puck_pos_curr = (0, 0)
-        self.puck_pos_last = (0, 0)
+        self.puck_pos_curr = (640, 500)
+        self.puck_pos_last = (640, 500)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
-        self.puck_vector_size = 0.0
+        self.puck_vector_len = 0.0
         self.puck_size = min(screen_size[0], screen_size[1]) * 0.05
 
     def bounce_x(self):
@@ -77,6 +75,16 @@ class Puck:
     def bounce_y(self):
         self.puck_vector_normalized[1] *= -1
 
+    def set_puck_vect_norm(self, new_vect):
+        self.puck_vector_normalized = new_vect
+
+    def set_puck_vect_len(self, new_vect_len):
+        self.puck_vector_len = new_vect_len
+
+    def set_puck_pos(self, new_pos):
+        self.puck_pos_last = self.puck_pos_curr
+        self.puck_pos_curr = new_pos
+
     def get_puck_size(self):
         return self.puck_size
 
@@ -84,12 +92,15 @@ class Puck:
         return self.puck_pos_curr
 
     def get_puck_vect(self):
-        return (self.puck_vector_normalized, self.puck_vector_size)
+        return (self.puck_vector_normalized, self.puck_vector_len)
 
     def update(self):
         self.puck_pos_last = self.puck_pos_curr
-        self.puck_pos_curr = self.puck_vector_normalized * self.puck_vector_size
-        self.puck_vector_size -= 0.01
+        self.puck_pos_curr += self.puck_vector_normalized * self.puck_vector_len
+        if self.puck_vector_len <= 0.0:
+            self.puck_vector_len = 0.0
+        else:
+            self.puck_vector_len -= 0.01
 
     def update_puck_size(self):
         self.puck_size = min(screen_size[0], screen_size[1]) * 0.05
@@ -164,7 +175,9 @@ class Game:
         pos = tuple(pos)
         return pos
 
-    def puck_validate(self, pos, size):
+    def puck_validate(self):
+        pos = self.puck.get_puck_pos()
+        size = self.puck.get_puck_size()
         board_boundaries = self.board.get_board_bounds()
         pos = list(pos)
         # left bound
@@ -181,25 +194,46 @@ class Game:
             self.puck.bounce_y()
         pos = tuple(pos)
         # TODO
-        return pos
 
     def puck_player_collision(self, player_pos, player_size):
         puck_pos = self.puck.get_puck_pos()
         puck_size = self.puck.get_puck_size()
-        return player_size + puck_size <= math.sqrt(
-            (player_pos[0] + puck_pos[0]) ** 2 + (player_pos[1] + puck_pos[1]) ** 2
-        )
+        radius_sum = player_size + puck_size
+        collision_vect = pg.math.Vector2(puck_pos) - pg.math.Vector2(player_pos)
+        dist = collision_vect.length()
+        return dist < radius_sum
 
     def calculate_puck_vect_on_player_collide(self, player):
+        puck_pos = self.puck.get_puck_pos()
         puck_vect = self.puck.get_puck_vect()
-        self.player.calculate_player_vector()
-        player_vect = self.player.get_player_vect()
-        player_vect_len = Vector_handler.get_vector_length(player_vect)
-        player_vect_norm = Vector_handler.normalize_vector(player_vect)
-        collide_vect = Vector_handler.calculate_vector(
-            self.player.get_player_pos, self.puck.get_puck_pos
+        curr_puck_vect = puck_vect[0] * puck_vect[1]
+        collision_vect = pg.math.Vector2(puck_pos) - pg.math.Vector2(
+            player.get_player_pos()
         )
-        collide_vect = Vector_handler.normalize_vector(collide_vect)
+        radius_sum = self.puck.get_puck_size() + player.get_player_size()
+        dist = collision_vect.length()
+        if dist <= 0:
+            collision_norm = pg.math.Vector2(1, 0)
+        else:
+            collision_norm = collision_vect.normalize()
+
+        penetration_depth = radius_sum - dist
+        puck_pos += collision_norm * penetration_depth
+        self.puck.set_puck_pos(puck_pos)
+
+        relative_vel = curr_puck_vect - player.get_player_vect()
+        vel_along_norm = relative_vel.dot(collision_norm)
+        if vel_along_norm < 0:
+            restitution = 1.0
+            j = -(1 + restitution) * vel_along_norm
+            curr_puck_vect += j * collision_norm
+        puck_speed = curr_puck_vect.length()
+        if puck_speed > 0:
+            puck_vect_norm = curr_puck_vect.normalize()
+        else:
+            puck_vect_norm = pg.math.Vector2(0, 0)
+        self.puck.set_puck_vect_len(puck_speed)
+        self.puck.set_puck_vect_norm(puck_vect_norm)
 
     def on_display_resize(self):
         self.player.update_player_size()
@@ -213,12 +247,26 @@ class Game:
         pos_line = self.middle_line_validation("right", pos_in_board)
         self.player.set_player_pos(pos_line)
 
+    def update_puck(self):
+        self.puck.update()
+        # self.puck_validate()
+        new_pos = self.board_validation(
+            self.puck.get_puck_pos(), self.puck.get_puck_size()
+        )
+        self.puck.set_puck_pos(new_pos)
+
     def draw(self):
-        self.player.draw()
         self.board.draw()
+        self.player.draw()
+        self.puck.draw()
 
     def update(self):
         self.update_player()
+        if self.puck_player_collision(
+            self.player.get_player_pos(), self.player.get_player_size()
+        ):
+            self.calculate_puck_vect_on_player_collide(self.player)
+        self.update_puck()
         self.draw()
 
 
