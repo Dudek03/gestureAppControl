@@ -100,7 +100,7 @@ class Puck:
         if self.puck_vector_len <= 0.0:
             self.puck_vector_len = 0.0
         else:
-            self.puck_vector_len -= 0.01
+            self.puck_vector_len -= 0.5
 
     def update_puck_size(self):
         self.puck_size = min(screen_size[0], screen_size[1]) * 0.05
@@ -175,24 +175,35 @@ class Game:
         pos = tuple(pos)
         return pos
 
-    def puck_validate(self):
+    def puck_validation(self):
         pos = self.puck.get_puck_pos()
         size = self.puck.get_puck_size()
         board_boundaries = self.board.get_board_bounds()
+        is_updated = False
         pos = list(pos)
         # left bound
         if pos[0] - size <= board_boundaries[2]:
             self.puck.bounce_x()
+            pos[0] = board_boundaries[2] + size + 1
+            is_updated = True
         # right bound
         elif pos[0] + size >= board_boundaries[3]:
             self.puck.bounce_x()
+            pos[0] = board_boundaries[3] - size - 1
+            is_updated = True
         # top bound
         if pos[1] - size <= board_boundaries[0]:
             self.puck.bounce_y()
+            pos[1] = board_boundaries[0] + size + 1
+            is_updated = True
         # bottom bound
         elif pos[1] + size >= board_boundaries[1]:
             self.puck.bounce_y()
+            pos[1] = board_boundaries[1] - size - 1
+            is_updated = True
         pos = tuple(pos)
+        if is_updated:
+            self.puck.set_puck_pos(pos)
         # TODO
 
     def puck_player_collision(self, player_pos, player_size):
@@ -220,7 +231,7 @@ class Game:
         penetration_depth = radius_sum - dist
         puck_pos += collision_norm * penetration_depth
         self.puck.set_puck_pos(puck_pos)
-
+        self.player.calculate_player_vector()
         relative_vel = curr_puck_vect - player.get_player_vect()
         vel_along_norm = relative_vel.dot(collision_norm)
         if vel_along_norm < 0:
@@ -249,11 +260,7 @@ class Game:
 
     def update_puck(self):
         self.puck.update()
-        # self.puck_validate()
-        new_pos = self.board_validation(
-            self.puck.get_puck_pos(), self.puck.get_puck_size()
-        )
-        self.puck.set_puck_pos(new_pos)
+        self.puck_validation()
 
     def draw(self):
         self.board.draw()
@@ -262,11 +269,11 @@ class Game:
 
     def update(self):
         self.update_player()
+        self.update_puck()
         if self.puck_player_collision(
             self.player.get_player_pos(), self.player.get_player_size()
         ):
             self.calculate_puck_vect_on_player_collide(self.player)
-        self.update_puck()
         self.draw()
 
 
@@ -278,12 +285,9 @@ while running:
         if event.type == pg.VIDEORESIZE:
             game.on_display_resize()
     screen_size = pg.display.get_window_size()
-    # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
     game.update()
-    # RENDER YOUR GAME HERE
 
-    # flip() the display to put your work on screen
     pg.display.flip()
 
     dt = clock.tick(60) / 1000
