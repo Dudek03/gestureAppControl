@@ -55,4 +55,5 @@ htmlcov/
 .mypy_cache/
 
 # --- Logi ---
+
 *.log

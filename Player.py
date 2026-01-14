@@ -1,10 +1,12 @@
 import pygame as pg
 
+from Screen_helper import Screen_helper
+
 
 class Player:
-    def __init__(self, screen, screen_size):
-        self.screen = screen
-        self.screen_size = screen_size
+    def __init__(self):
+        self.screen = Screen_helper.get_screen()
+        self.screen_size = Screen_helper.get_size()
         self.player_pos_curr = (0, 0)
         self.player_pos_last = (0, 0)
         self.player_vect = pg.Vector2(0, 0)
@@ -15,6 +17,7 @@ class Player:
         self.player_pos_curr = pg.mouse.get_pos()
 
     def update_player_size(self):
+        self.screen_size = Screen_helper.get_size()
         self.player_size = min(self.screen_size[0], self.screen_size[1]) * 0.05
 
     def calculate_player_vector(self):

@@ -1,10 +1,12 @@
 import pygame as pg
 
+from Screen_helper import Screen_helper
+
 
 class Puck:
-    def __init__(self, screen, screen_size):
-        self.screen = screen
-        self.screen_size = screen_size
+    def __init__(self):
+        self.screen = Screen_helper.get_screen()
+        self.screen_size = Screen_helper.get_size()
         self.puck_pos_curr = (640, 500)
         self.puck_pos_last = (640, 500)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
@@ -45,6 +47,7 @@ class Puck:
             self.puck_vector_len -= 0.5
 
     def update_puck_size(self):
+        self.screen_size = Screen_helper.get_size()
         self.puck_size = min(self.screen_size[0], self.screen_size[1]) * 0.05
 
     def draw(self):

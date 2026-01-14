@@ -6,10 +6,12 @@ from Puck import Puck
 
 
 class Game:
-    def __init__(self, screen, screen_size):
-        self.board = Board(screen, screen_size)
-        self.player = Player(screen, screen_size)
-        self.puck = Puck(screen, screen_size)
+
+    def __init__(self):
+        self.board = Board()
+        self.player = Player()
+        self.puck = Puck()
+
 
     def board_validation(self, pos, size):
         board_boundaries = self.board.get_board_bounds()
@@ -114,7 +116,8 @@ class Game:
 
     def on_display_resize(self):
         self.player.update_player_size()
-        self.board.change_board_size()
+        self.board.update_board_size()
+        self.puck.update_puck_size()
 
     def update_player(self):
         self.player.update_player_pos()
