@@ -1,4 +1,58 @@
-.venv/
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# --- Wirtualne Środowiska (Virtual Environments) ---
+# Najczęstsze nazwy folderów ze środowiskiem
 venv/
 env/
+.venv/
+.env/
+
+# --- Zmienne środowiskowe (Sekrety) ---
+# Bardzo ważne, żeby nie wysyłać haseł/kluczy na GitHuba
 .env
+
+# --- Dystrybucja i Budowanie (np. PyInstaller) ---
+build/
+dist/
+*.spec
+*.egg-info/
+*.egg
+MANIFEST
+
+# --- Pliki Systemowe (Junk files) ---
+# Mac OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Edytory i IDE ---
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+
+# --- Testy i Code Coverage ---
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# --- Logi ---
+*.log
