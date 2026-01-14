@@ -6,10 +6,12 @@ from Puck import Puck
 
 
 class Game:
+
     def __init__(self):
         self.board = Board()
         self.player = Player()
         self.puck = Puck()
+
 
     def board_validation(self, pos, size):
         board_boundaries = self.board.get_board_bounds()
