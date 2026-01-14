@@ -3,15 +3,15 @@ import pygame as pg
 from Board import Board
 from Player import Player
 from Puck import Puck
+from Score import Score
 
 
 class Game:
-
     def __init__(self):
         self.board = Board()
         self.player = Player()
         self.puck = Puck()
-
+        self.score = Score()
 
     def board_validation(self, pos, size):
         board_boundaries = self.board.get_board_bounds()
@@ -30,6 +30,23 @@ class Game:
             pos[1] = board_boundaries[1] - size
         pos = tuple(pos)
         return pos
+
+    def goal_check_y(self):
+        goals_bounds = self.board.get_goals_bounds()
+        puck_pos = self.puck.get_puck_pos()
+        return puck_pos[1] >= goals_bounds[0] and puck_pos[1] <= goals_bounds[1]
+
+    def check_goal_left(self):
+        puck_pos = self.puck.get_puck_pos()
+        puck_size = self.puck.get_puck_size()
+        board_boundaries = self.board.get_board_bounds()
+        return puck_pos[0] - puck_size <= board_boundaries[2] and self.goal_check_y()
+
+    def check_goal_right(self):
+        puck_pos = self.puck.get_puck_pos()
+        puck_size = self.puck.get_puck_size()
+        board_boundaries = self.board.get_board_bounds()
+        return puck_pos[0] + puck_size >= board_boundaries[3] and self.goal_check_y()
 
     def middle_line_validation(self, side, pos):
         board_boundaries = self.board.get_board_bounds()
@@ -129,6 +146,13 @@ class Game:
 
     def update_puck(self):
         self.puck.update()
+        if self.check_goal_left():
+            self.score.add_point_right()
+            self.reset()
+        elif self.check_goal_right():
+            self.score.add_point_left()
+            self.reset()
+
         self.puck_validation()
 
     def draw(self):
@@ -136,9 +160,28 @@ class Game:
         self.player.draw()
         self.puck.draw()
 
+    def reset(self):
+        self.puck.reset()
+        self.player.reset()
+        self.draw()
+        print(self.score.get_score())
+
     def update(self):
         self.update_player()
-        self.update_puck()
+        # self.update_puck()
+
+        self.puck.update()
+        if self.check_goal_left():
+            self.score.add_point_right()
+            self.reset()
+            return
+        elif self.check_goal_right():
+            self.score.add_point_left()
+            self.reset()
+            return
+
+        self.puck_validation()
+
         if self.puck_player_collision(
             self.player.get_player_pos(), self.player.get_player_size()
         ):
