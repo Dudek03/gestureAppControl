@@ -64,15 +64,16 @@ class Game:
         pos = self.puck.get_puck_pos()
         size = self.puck.get_puck_size()
         board_boundaries = self.board.get_board_bounds()
+        goals_bounds = self.board.get_goals_bounds()
         is_updated = False
         pos = list(pos)
         # left bound
-        if pos[0] - size <= board_boundaries[2]:
+        if pos[0] - size <= board_boundaries[2] and not self.goal_check_y():
             self.puck.bounce_x()
             pos[0] = board_boundaries[2] + size + 1
             is_updated = True
         # right bound
-        elif pos[0] + size >= board_boundaries[3]:
+        elif pos[0] + size >= board_boundaries[3] and not self.goal_check_y():
             self.puck.bounce_x()
             pos[0] = board_boundaries[3] - size - 1
             is_updated = True

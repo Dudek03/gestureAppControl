@@ -10,6 +10,8 @@ class Board:
     def set_all(self):
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
+        self.board_offset = 0.1
+        self.board_size = 0.8
         self.board_pos = (self.screen_size[0] * 0.1, self.screen_size[1] * 0.1)
         self.board_size = (self.screen_size[0] * 0.8, self.screen_size[1] * 0.8)
         self.middle_line_start_pos = (
