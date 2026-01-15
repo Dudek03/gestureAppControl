@@ -11,8 +11,11 @@ class Board:
     def set_all(self):
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
-        self.board_pos = (self.screen_size[0] * UI_settings.get_board_pos_mul(), self.screen_size[1] * UI_settings.get_board_pos_mul())
-        self.board_size = (self.screen_size[0] * UI_settings.get_board_size_mul(), self.screen_size[1] * UI_settings.get_board_size_mul())
+
+        self.board_offset = 0.1
+        self.board_size = 0.8
+        self.board_pos = (self.screen_size[0] * 0.1, self.screen_size[1] * 0.1)
+        self.board_size = (self.screen_size[0] * 0.8, self.screen_size[1] * 0.8)
         self.middle_line_start_pos = (
             self.board_pos[0] + self.board_size[0] / 2,
             self.board_pos[1],
@@ -31,6 +34,16 @@ class Board:
             self.board_pos[1] + self.board_size[1] * 0.6,
         )
 
+        self.right_goal_line_start_pos = (
+            self.board_pos[0] + self.board_size[0],
+            self.board_pos[1] + self.board_size[1] * 0.4,
+        )
+
+        self.right_goal_line_end_pos = (
+            self.board_pos[0] + self.board_size[0],
+            self.board_pos[1] + self.board_size[1] * 0.6,
+        )
+
     def update_board_size(self):
         self.set_all()
 
@@ -38,6 +51,20 @@ class Board:
         pg.draw.rect(self.screen, UI_settings.get_board_line_color(), (self.board_pos, self.board_size), width=5)
         pg.draw.line(
             self.screen, UI_settings.get_middle_line_color(), self.middle_line_start_pos, self.middle_line_end_pos
+        )
+        pg.draw.line(
+            self.screen,
+            "green",
+            self.left_goal_line_start_pos,
+            self.left_goal_line_end_pos,
+            width=6,
+        )
+        pg.draw.line(
+            self.screen,
+            "green",
+            self.right_goal_line_start_pos,
+            self.right_goal_line_end_pos,
+            width=6,
         )
 
     def get_board_bounds(self):
@@ -47,3 +74,8 @@ class Board:
         right_y = self.board_pos[0] + self.board_size[0]
         middle_y = self.middle_line_start_pos[0]
         return (top_x, bottom_x, left_y, right_y, middle_y)
+
+    def get_goals_bounds(self):
+        top = self.left_goal_line_start_pos[1]
+        bottom = self.left_goal_line_end_pos[1]
+        return (top, bottom)
