@@ -23,7 +23,7 @@ while running:
             screen_size = pg.display.get_window_size()
             Screen_helper.set_screen_size(screen_size)
             game.on_display_resize()
-    screen.fill(UI_settings.get_screen_fill_color)
+    screen.fill(UI_settings.get_screen_fill_color())
     game.update()
 
     pg.display.flip()
