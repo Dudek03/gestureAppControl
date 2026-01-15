@@ -7,8 +7,8 @@ class Puck:
     def __init__(self):
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
-        self.puck_pos_curr = (640, 500)
-        self.puck_pos_last = (640, 500)
+        self.puck_pos_curr = (640, 360)
+        self.puck_pos_last = (640, 360)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
         self.puck_vector_len = 0.0
         self.puck_size = min(self.screen_size[0], self.screen_size[1]) * 0.05
@@ -45,6 +45,12 @@ class Puck:
             self.puck_vector_len = 0.0
         else:
             self.puck_vector_len -= 0.5
+
+    def reset(self):
+        self.puck_pos_curr = (640, 360)
+        self.puck_pos_last = (640, 360)
+        self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
+        self.puck_vector_len = 0.0
 
     def update_puck_size(self):
         self.screen_size = Screen_helper.get_size()

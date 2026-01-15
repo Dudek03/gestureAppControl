@@ -7,8 +7,8 @@ class Player:
     def __init__(self):
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
-        self.player_pos_curr = (0, 0)
-        self.player_pos_last = (0, 0)
+        self.player_pos_curr = (800, 360)
+        self.player_pos_last = (800, 360)
         self.player_vect = pg.Vector2(0, 0)
         self.player_size = min(self.screen_size[0], self.screen_size[1]) * 0.05
 
@@ -19,6 +19,10 @@ class Player:
     def update_player_size(self):
         self.screen_size = Screen_helper.get_size()
         self.player_size = min(self.screen_size[0], self.screen_size[1]) * 0.05
+
+    def reset(self):
+        self.player_pos_curr = (800, 360)
+        self.player_pos_last = (800, 360)
 
     def calculate_player_vector(self):
         self.player_vect = pg.math.Vector2(
