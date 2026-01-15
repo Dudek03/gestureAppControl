@@ -1,11 +1,14 @@
 import pygame as pg
 
+from UI_settings import UI_settings
+
 
 class Score:
     def __init__(self):
         self.left_score = 0
         self.right_score = 0
-        self.font = pg.font.Font(None, 100)
+        self.font = pg.font.Font(UI_settings.get_score_font)
+
 
     def add_point_left(self):
         self.left_score += 1
