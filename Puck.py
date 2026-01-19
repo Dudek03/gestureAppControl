@@ -11,7 +11,7 @@ class Puck:
         self.puck_pos_last = (640, 500)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
         self.puck_vector_len = 0.0
-        self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.get_puck_size_mul()
+        self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.puck_size_mul
 
     def bounce_x(self):
         self.puck_vector_normalized[0] *= -1
@@ -48,7 +48,7 @@ class Puck:
 
     def update_puck_size(self):
         self.screen_size = Screen_helper.get_size()
-        self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.get_puck_size_mul()
+        self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.puck_size_mul
 
     def draw(self):
-        pg.draw.circle(self.screen, UI_settings.get_puck_color(), self.puck_pos_curr, self.puck_size)
+        pg.draw.circle(self.screen, UI_settings.puck_color, self.puck_pos_curr, self.puck_size)
