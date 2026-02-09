@@ -13,21 +13,21 @@ clock = pg.time.Clock()
 running = True
 dt = 0
 
+if __name__ == "__main__":
+    game = Game(mode="normal")
+    while running:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                running = False
+            if event.type == pg.VIDEORESIZE:
+                screen_size = pg.display.get_window_size()
+                Screen_helper.set_screen_size(screen_size)
+                game.on_display_resize()
+        screen.fill(UI_settings.get_screen_fill_color())
+        game.update()
 
-game = Game()
-while running:
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            running = False
-        if event.type == pg.VIDEORESIZE:
-            screen_size = pg.display.get_window_size()
-            Screen_helper.set_screen_size(screen_size)
-            game.on_display_resize()
-    screen.fill(UI_settings.get_screen_fill_color())
-    game.update()
+        pg.display.flip()
 
-    pg.display.flip()
+        dt = clock.tick(60) / 1000
 
-    dt = clock.tick(60) / 1000
-
-pg.quit()
+    pg.quit()
