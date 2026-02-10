@@ -7,8 +7,9 @@ class Score:
     def __init__(self):
         self.left_score = 0
         self.right_score = 0
-        self.font = pg.font.Font(UI_settings.get_score_font)
-
+        self.font = pg.font.Font(
+            UI_settings.get_score_font()[0], UI_settings.get_score_font()[1]
+        )
 
     def add_point_left(self):
         self.left_score += 1
