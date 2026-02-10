@@ -203,12 +203,14 @@ class Game:
         self.opponent.update_player_size()
         self.board.update_board_size()
         self.puck.update_puck_size()
+        self.score.update_score_size()
 
     def draw(self):
         self.board.draw()
         self.player.draw()
         self.opponent.draw()
         self.puck.draw()
+        self.score.show_score()
 
     def reset(self):
         self.puck.reset()
