@@ -3,8 +3,9 @@ import numpy as np
 from gymnasium import spaces
 import pygame as pg
 
-from game import Game
+from Game import Game
 from Screen_helper import Screen_helper
+from UI_settings import UI_settings
 
 
 class AirHockeyEnv(gym.Env):
@@ -13,7 +14,12 @@ class AirHockeyEnv(gym.Env):
     def __init__(self):
         super(AirHockeyEnv, self).__init__()
 
-        self.game = Game(mode="training")
+        pg.init()
+        screen_size = (800,600)
+        screen = pg.display.set_mode(screen_size)
+        Screen_helper.set_screen(screen)
+        Screen_helper.set_screen_size(screen_size)
+        self.game = Game(mode = "training")
 
         # AI continously controls speed < -1 ; 1 >
         # [vel_x, vel_y]
@@ -25,7 +31,7 @@ class AirHockeyEnv(gym.Env):
         )
 
         self.clock = pg.time.Clock()
-        self.max_steps = 3000
+        self.max_steps = 1000
         self.current_step = 0
 
     def reset(self, seed=None, options=None):
@@ -58,13 +64,14 @@ class AirHockeyEnv(gym.Env):
             reward = -0.001
 
             # maybe add TODO
-            # if self.game.puck_player_collision(...): reward += 0.1
+        if self.game.puck_player_collision(self.game.player.get_player_pos(), self.game.player.get_player_size()): reward += 0.27
+            
 
         # 3. stuck safety (Truncation)
         if self.current_step >= self.max_steps:
             truncated = True
             # punish for not doing anything
-            reward -= 1.0
+            reward -= 5
 
         # 4. observation after move
         observation = self._get_obs()
@@ -76,7 +83,8 @@ class AirHockeyEnv(gym.Env):
             if event.type == pg.QUIT:
                 self.close()
 
-        self.game.screen.fill(self._get_bg_color())
+        screen = Screen_helper.get_screen()
+        screen.fill(UI_settings.get_screen_fill_color())
         self.game.draw()
         pg.display.flip()
 
@@ -98,23 +106,14 @@ class AirHockeyEnv(gym.Env):
 
         obs = np.array(
             [
-                p_pos[0] / w,  # Puck X (0-1)
-                p_pos[1] / h,  # Puck Y (0-1)
-                p_vel[0] / 20.0,  # Puck Vx (-1 do 1)
-                p_vel[1] / 20.0,  # Puck Vy (-1 do 1)
-                ai_pos[0] / w,  # AI X (0-1)
-                ai_pos[1] / h,  # AI Y (0-1)
+                float(p_pos[0]) / w,     # Puck X
+                float(p_pos[1]) / h,     # Puck Y
+                float(p_vel[0][0]) / 20.0,  # Puck Vx
+                float(p_vel[0][1]) / 20.0,  # Puck Vy
+                float(ai_pos[0]) / w,    # AI X
+                float(ai_pos[1]) / h,    # AI Y
             ],
             dtype=np.float32,
         )
 
         return obs
-
-    def _get_bg_color(self):
-        """Pomocnicza metoda do koloru tła (możesz wziąć z UI_settings)"""
-        try:
-            from game_engine import UI_settings
-
-            return UI_settings.get_screen_fill_color()
-        except:
-            return (0, 0, 0)
