@@ -23,8 +23,8 @@ class Board:
 
         self.goal_depth = self.screen_size[0] * 0.05
 
-        self.goal_top_y = self.top + self.board_size[1] * 0.35
-        self.goal_bottom_y = self.top + self.board_size[1] * 0.65
+        self.goal_top_y = self.top + self.board_size[1] * 0.3
+        self.goal_bottom_y = self.top + self.board_size[1] * 0.7
 
         self.middle_line_start = (self.left + self.board_size[0] / 2, self.top)
         self.middle_line_end = (

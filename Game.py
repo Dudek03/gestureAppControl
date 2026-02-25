@@ -159,7 +159,7 @@ class Game:
         o_pos = self.opponent.get_player_pos()
         mid_x = self.board.middle_line_start[0]
         center_y = self.board.top + (self.board.board_size[1] / 2)
-        speed = 0.6
+        speed = 1
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
@@ -184,7 +184,7 @@ class Game:
             elif o_pos[0] < target_x - 5:
                 vx = speed
         self.opponent.move_ai_step(vx, vy)
-        
+
 
     def middle_line_validation(self, side, pos):
         (_, _, _, _, middle_x) = self.board.get_board_bounds()
