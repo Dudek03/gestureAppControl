@@ -10,6 +10,7 @@ class Player:
         self.side = side  # "left" lub "right"
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
+        self.max_player_speed = 50
 
         if self.side == "left":
             start_x = 100
@@ -27,7 +28,7 @@ class Player:
             * UI_settings.get_player_size_mul()
         )
 
-        self.speed_limit = 15.0
+        self.speed_limit = 15
 
     def reset(self):
         self.player_pos_curr = self.start_pos.copy()
@@ -39,7 +40,10 @@ class Player:
             return
         self.player_pos_last = self.player_pos_curr.copy()
         mouse_pos = pg.mouse.get_pos()
-        self.player_pos_curr = pg.Vector2(mouse_pos[0], mouse_pos[1])
+        update_vect = pg.Vector2(pg.Vector2(mouse_pos[0], mouse_pos[1]) - self.player_pos_last)
+        if update_vect.length() > self.max_player_speed:
+            update_vect = update_vect.normalize() * self.max_player_speed
+        self.player_pos_curr = self.player_pos_last + update_vect
 
     def move_ai_step(self, action_x, action_y):
         if not self.is_ai:

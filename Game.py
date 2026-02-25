@@ -159,7 +159,7 @@ class Game:
         o_pos = self.opponent.get_player_pos()
         mid_x = self.board.middle_line_start[0]
         center_y = self.board.top + (self.board.board_size[1] / 2)
-        speed = 1
+        speed = 0.8
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
@@ -265,7 +265,7 @@ class Game:
             restitution = 1.0
             j = -(1 + restitution) * vel_along_norm
             curr_puck_vect += j * collision_norm
-        puck_speed = curr_puck_vect.length()
+        puck_speed = min(curr_puck_vect.length(),self.puck.max_puck_speed)
         if puck_speed > 0:
             puck_vect_norm = curr_puck_vect.normalize()
         else:

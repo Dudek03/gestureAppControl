@@ -12,6 +12,7 @@ class Puck:
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
         self.puck_vector_len = 0.0
         self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.get_puck_size_mul()
+        self.max_puck_speed = 50
 
     def bounce_x(self):
         self.puck_vector_normalized[0] *= -1
