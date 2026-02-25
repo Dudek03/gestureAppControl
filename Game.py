@@ -157,7 +157,7 @@ class Game:
     def _move_opponent_script(self):
         p_pos = self.puck.get_puck_pos()
         o_pos = self.opponent.get_player_pos()
-        mid_x = self.board.middle_line_start[0]
+        mid_x = self.board.middle_line_start[0]+20
         center_y = self.board.top + (self.board.board_size[1] / 2)
         speed = 0.8
         vx, vy = 0, 0
