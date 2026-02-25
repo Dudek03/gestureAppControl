@@ -216,7 +216,9 @@ class Game:
         self.opponent.update_player_size()
         self.board.update_board_size()
         self.puck.update_puck_size()
+        self.puck.update_puck_pos()
         self.score.update_score_size()
+        
 
     def draw(self):
         self.board.draw()

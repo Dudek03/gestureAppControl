@@ -7,8 +7,8 @@ class Puck:
     def __init__(self):
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
-        self.puck_pos_curr = (640, 360)
-        self.puck_pos_last = (640, 360)
+        self.puck_pos_curr = (self.screen_size[0]/2, self.screen_size[1]/2)
+        self.puck_pos_last = (self.screen_size[0]/2, self.screen_size[1]/2)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
         self.puck_vector_len = 0.0
         self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.get_puck_size_mul()
@@ -47,14 +47,18 @@ class Puck:
             self.puck_vector_len -= 0.5
 
     def reset(self):
-        self.puck_pos_curr = (640, 360)
-        self.puck_pos_last = (640, 360)
+        self.puck_pos_curr = (self.screen_size[0]/2, self.screen_size[1]/2)
+        self.puck_pos_last = (self.screen_size[0]/2, self.screen_size[1]/2)
         self.puck_vector_normalized = pg.Vector2(0.0, 0.0)
         self.puck_vector_len = 0.0
 
     def update_puck_size(self):
         self.screen_size = Screen_helper.get_size()
         self.puck_size = min(self.screen_size[0], self.screen_size[1]) * UI_settings.get_puck_size_mul()
+    
+    def update_puck_pos(self):
+        self.puck_pos_curr = (self.screen_size[0]/2, self.screen_size[1]/2)
+        self.puck_pos_last = (self.screen_size[0]/2, self.screen_size[1]/2)
 
     def draw(self):
         pg.draw.circle(self.screen, UI_settings.get_puck_color(), self.puck_pos_curr, self.puck_size)
