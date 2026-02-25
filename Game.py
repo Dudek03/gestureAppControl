@@ -163,23 +163,23 @@ class Game:
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
-            if p_pos[1] > o_pos[1] + 5:
+            if p_pos[1] >= o_pos[1] + 5:
                 vy = speed
             elif p_pos[1] < o_pos[1] - 5:
                 vy = -speed
             
-            if p_pos[0] > o_pos[0] + 5:
+            if p_pos[0] >= o_pos[0] + 5:
                 vx = speed
             elif p_pos[0] < o_pos[0] - 5:
                 vx = -speed
         else:
-            if o_pos[1] > center_y + 5:
+            if o_pos[1] >= center_y + 5:
                 vy = -speed
             elif o_pos[1] < center_y - 5:
                 vy = speed
             
             target_x = mid_x / 4
-            if o_pos[0] > target_x + 5:
+            if o_pos[0] >= target_x + 5:
                 vx = -speed
             elif o_pos[0] < target_x - 5:
                 vx = speed
