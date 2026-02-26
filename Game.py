@@ -157,7 +157,7 @@ class Game:
     def _move_opponent_script(self):
         p_pos = self.puck.get_puck_pos()
         o_pos = self.opponent.get_player_pos()
-        mid_x = self.board.middle_line_start[0]+20
+        mid_x = self.board.middle_line_start[0] + 20
         center_y = self.board.top + (self.board.board_size[1] / 2)
         speed = 0.8
         vx, vy = 0, 0
@@ -167,7 +167,7 @@ class Game:
                 vy = speed
             elif p_pos[1] < o_pos[1] - 5:
                 vy = -speed
-            
+
             if p_pos[0] >= o_pos[0] + 5:
                 vx = speed
             elif p_pos[0] < o_pos[0] - 5:
@@ -177,14 +177,13 @@ class Game:
                 vy = -speed
             elif o_pos[1] < center_y - 5:
                 vy = speed
-            
+
             target_x = mid_x / 4
             if o_pos[0] >= target_x + 5:
                 vx = -speed
             elif o_pos[0] < target_x - 5:
                 vx = speed
         self.opponent.move_ai_step(vx, vy)
-
 
     def middle_line_validation(self, side, pos):
         (_, _, _, _, middle_x) = self.board.get_board_bounds()
@@ -218,7 +217,6 @@ class Game:
         self.puck.update_puck_size()
         self.puck.update_puck_pos()
         self.score.update_score_size()
-        
 
     def draw(self):
         self.board.draw()
@@ -228,7 +226,7 @@ class Game:
         self.score.show_score()
 
     def reset(self):
-        self.puck.reset()
+        self.puck.reset(self.mode)
         self.player.reset()
         self.opponent.reset()
 
@@ -236,8 +234,7 @@ class Game:
         puck_pos = self.puck.get_puck_pos()
         puck_size = self.puck.get_puck_size()
         radius_sum = player_size + puck_size
-        collision_vect = pg.math.Vector2(
-            puck_pos) - pg.math.Vector2(player_pos)
+        collision_vect = pg.math.Vector2(puck_pos) - pg.math.Vector2(player_pos)
         dist = collision_vect.length()
         return dist < radius_sum
 
@@ -265,7 +262,7 @@ class Game:
             restitution = 1.0
             j = -(1 + restitution) * vel_along_norm
             curr_puck_vect += j * collision_norm
-        puck_speed = min(curr_puck_vect.length(),self.puck.max_puck_speed)
+        puck_speed = min(curr_puck_vect.length(), self.puck.max_puck_speed)
         if puck_speed > 0:
             puck_vect_norm = curr_puck_vect.normalize()
         else:
