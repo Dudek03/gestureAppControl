@@ -83,34 +83,34 @@ class Game:
 
     def board_validation(self, pos, size):
         (top, bottom, left, right, _) = self.board.get_board_bounds()
-        (goal_top, goal_bottom) = self.board.get_goal_y_range()
-        goal_depth = self.board.get_goal_depth()
+        # (goal_top, goal_bottom) = self.board.get_goal_y_range()
+        # goal_depth = self.board.get_goal_depth()
 
         p = list(pos)
 
-        in_goal_y = (p[1] - size > goal_top) and (p[1] + size < goal_bottom)
+        # in_goal_y = (p[1] - size > goal_top) and (p[1] + size < goal_bottom)
 
         min_x = left + size
         max_x = right - size
 
-        if in_goal_y:
+        """if in_goal_y:
             min_x = left - goal_depth + size
-            max_x = right + goal_depth - size
+            max_x = right + goal_depth - size"""
 
         if p[0] < min_x:
             p[0] = min_x
         if p[0] > max_x:
             p[0] = max_x
 
-        in_left_recess = p[0] < left + size
-        in_right_recess = p[0] > right - size
+        """in_left_recess = p[0] < left + size
+        in_right_recess = p[0] > right - size"""
 
         min_y = top + size
         max_y = bottom - size
 
-        if in_left_recess or in_right_recess:
+        """if in_left_recess or in_right_recess:
             min_y = goal_top + size
-            max_y = goal_bottom - size
+            max_y = goal_bottom - size"""
 
         if p[1] < min_y:
             p[1] = min_y
@@ -234,7 +234,8 @@ class Game:
         puck_pos = self.puck.get_puck_pos()
         puck_size = self.puck.get_puck_size()
         radius_sum = player_size + puck_size
-        collision_vect = pg.math.Vector2(puck_pos) - pg.math.Vector2(player_pos)
+        collision_vect = pg.math.Vector2(
+            puck_pos) - pg.math.Vector2(player_pos)
         dist = collision_vect.length()
         return dist < radius_sum
 

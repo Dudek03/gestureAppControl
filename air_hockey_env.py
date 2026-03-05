@@ -15,19 +15,20 @@ class AirHockeyEnv(gym.Env):
         super(AirHockeyEnv, self).__init__()
 
         pg.init()
-        screen_size = (800,600)
+        screen_size = (800, 600)
         screen = pg.display.set_mode(screen_size)
         Screen_helper.set_screen(screen)
         Screen_helper.set_screen_size(screen_size)
-        self.game = Game(mode = "training")
+        self.game = Game(mode="training")
 
         # AI continously controls speed < -1 ; 1 >
         # [vel_x, vel_y]
-        self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.action_space = spaces.Box(
+            low=-1, high=1, shape=(2,), dtype=np.float32)
 
         #  [puck_x, puck_y, puck_vx, puck_vy, ai_x, ai_y]
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32
         )
 
         self.clock = pg.time.Clock()
@@ -64,8 +65,10 @@ class AirHockeyEnv(gym.Env):
             reward = -0.001
 
             # maybe add TODO
-        if self.game.puck_player_collision(self.game.player.get_player_pos(), self.game.player.get_player_size()): reward += 0.27
-            
+        if self.game.puck_player_collision(
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
+        ):
+            reward += 0.27
 
         # 3. stuck safety (Truncation)
         if self.current_step >= self.max_steps:
@@ -97,21 +100,25 @@ class AirHockeyEnv(gym.Env):
         """Pobiera i normalizuje dane dla AI."""
         puck = self.game.puck
         ai = self.game.player
+        opp = self.game.opponent
 
         w, h = Screen_helper.get_size()
 
         p_pos = puck.get_puck_pos()
         p_vel = puck.get_puck_vect()
         ai_pos = ai.get_player_pos()
+        opp_pos = opp.get_player_pos()
 
         obs = np.array(
             [
-                float(p_pos[0]) / w,     # Puck X
-                float(p_pos[1]) / h,     # Puck Y
+                float(p_pos[0]) / w,  # Puck X
+                float(p_pos[1]) / h,  # Puck Y
                 float(p_vel[0][0]) / 20.0,  # Puck Vx
                 float(p_vel[0][1]) / 20.0,  # Puck Vy
-                float(ai_pos[0]) / w,    # AI X
-                float(ai_pos[1]) / h,    # AI Y
+                float(ai_pos[0]) / w,  # AI X
+                float(ai_pos[1]) / h,  # AI Y
+                float(opp_pos[0]) / w,  # opponent X
+                float(opp_pos[1]) / h,  # opponent Y
             ],
             dtype=np.float32,
         )
