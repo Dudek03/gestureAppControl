@@ -232,6 +232,7 @@ class Game:
         self.player.reset()
         self.opponent.reset()
 
+
     def puck_player_collision(self, player_pos, player_size):
         puck_pos = self.puck.get_puck_pos()
         puck_size = self.puck.get_puck_size()

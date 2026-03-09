@@ -63,6 +63,14 @@ class AirHockeyEnv(gym.Env):
         else:
             reward = -0.001
 
+        # Reward for moving towards the puck using its position history
+        player_pos = self.game.player.get_player_pos()
+        puck_curr = self.game.puck.puck_pos_curr
+        puck_last = self.game.puck.puck_pos_last
+
+        if player_pos.distance_to(puck_curr) < player_pos.distance_to(puck_last):
+            reward += 0.02
+
         # puck go left after collide
         puck_vect_norm_x = self.game.puck.get_puck_vect()[0][0]
         if (
@@ -73,7 +81,7 @@ class AirHockeyEnv(gym.Env):
         ):
             reward += 0.3
 
-        (top, bottom, left, right, _) = self.board.get_board_bounds()
+        (top, bottom, left, right, _) = self.game.board.get_board_bounds()
         size = self.game.player.get_player_size()
         max_x = right - size
         if self.game.player.get_player_pos()[0] == max_x:
