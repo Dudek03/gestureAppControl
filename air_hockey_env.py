@@ -70,8 +70,8 @@ class AirHockeyEnv(gym.Env):
         puck_curr = self.game.puck.puck_pos_curr
         puck_last = self.game.puck.puck_pos_last
 
-        if player_pos.distance_to(puck_curr) < player_pos.distance_to(puck_last):
-            reward += 0.02
+        if player_pos.distance_to(puck_curr) < player_pos_last.distance_to(puck_last):
+            reward += 0.01
 
         # puck go left after collide
         puck_vect_norm_x = self.game.puck.get_puck_vect()[0][0]
@@ -84,16 +84,20 @@ class AirHockeyEnv(gym.Env):
             reward += 0.3
 
         if puck_curr == puck_last:
-            reward -= 0.5
+            reward -= 0.01
 
         if player_pos_last == player_pos:
-            reward -= 1
+            reward -= 0.005
+
+        w, h = Screen_helper.get_size()
+        if puck_curr[0] > w / 2:
+            reward -= 0.005
 
         (top, bottom, left, right, _) = self.game.board.get_board_bounds()
         size = self.game.player.get_player_size()
         max_x = right - size
         if self.game.player.get_player_pos()[0] == max_x:
-            reward -= 0.05
+            reward -= 0.005
 
         # 3. stuck safety (Truncation)
         if self.current_step >= self.max_steps:
@@ -138,8 +142,8 @@ class AirHockeyEnv(gym.Env):
             [
                 float(p_pos[0]) / w,  # Puck X
                 float(p_pos[1]) / h,  # Puck Y
-                float(p_vel[0][0]) / 20.0,  # Puck Vx
-                float(p_vel[0][1]) / 20.0,  # Puck Vy
+                float(p_vel[0][0] * p_vel[1]) / 20.0,  # Puck Vx
+                float(p_vel[0][1] * p_vel[1]) / 20.0,  # Puck Vy
                 float(ai_pos[0]) / w,  # AI X
                 float(ai_pos[1]) / h,  # AI Y
                 float(opp_pos[0]) / w,  # opponent X
