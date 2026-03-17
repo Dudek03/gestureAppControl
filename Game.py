@@ -159,7 +159,8 @@ class Game:
         o_pos = self.opponent.get_player_pos()
         mid_x = self.board.middle_line_start[0] + 20
         center_y = self.board.top + (self.board.board_size[1] / 2)
-        speed = 0.8
+        speed = 0.4  # was 0.8
+        slower_speed = 0.2  # was 0.5
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
@@ -171,7 +172,7 @@ class Game:
             if p_pos[0] >= o_pos[0] + 5:
                 vx = speed
             elif p_pos[0] < o_pos[0] - 5:
-                vx = -speed
+                vx = -slower_speed
         else:
             if o_pos[1] >= center_y + 5:
                 vy = -speed
@@ -180,7 +181,7 @@ class Game:
 
             target_x = mid_x / 4
             if o_pos[0] >= target_x + 5:
-                vx = -speed
+                vx = -slower_speed
             elif o_pos[0] < target_x - 5:
                 vx = speed
         self.opponent.move_ai_step(vx, vy)
@@ -204,13 +205,13 @@ class Game:
         p_pos = self.puck.get_puck_pos()
         p_size = self.puck.get_puck_size()
         limit = self.board.left - self.board.get_goal_depth()
-        return p_pos[0]-p_size < limit
+        return p_pos[0] - p_size < limit
 
     def check_goal_right(self):
         p_pos = self.puck.get_puck_pos()
         p_size = self.puck.get_puck_size()
         limit = self.board.right + self.board.get_goal_depth()
-        return p_pos[0]+p_size > limit
+        return p_pos[0] + p_size > limit
 
     def on_display_resize(self):
         self.player.update_player_size()
@@ -231,7 +232,6 @@ class Game:
         self.puck.reset(self.mode)
         self.player.reset()
         self.opponent.reset()
-
 
     def puck_player_collision(self, player_pos, player_size):
         puck_pos = self.puck.get_puck_pos()

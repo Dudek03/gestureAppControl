@@ -47,7 +47,6 @@ class AirHockeyEnv(gym.Env):
         self.current_step += 1
 
         # 1. ai step
-        # return 1 (ai win), -1 (ai lose), 0 (game continous)
         game_result = self.game.run_frame_ai(action)
 
         # 2. (Reward Shaping)
@@ -62,50 +61,51 @@ class AirHockeyEnv(gym.Env):
             reward -= 50.0
             terminated = True
         else:
-            reward = -0.001
+            reward += 0.001
 
-        # Reward for moving towards the puck using its position history
         player_pos = self.game.player.get_player_pos()
-        player_pos_last = self.game.player.get_player_last_pos()
         puck_curr = self.game.puck.puck_pos_curr
         puck_last = self.game.puck.puck_pos_last
 
-        if player_pos.distance_to(puck_curr) < player_pos_last.distance_to(puck_last):
-            reward += 0.01
-
-        # puck go left after collide
-        puck_vect_norm_x = self.game.puck.get_puck_vect()[0][0]
-        if (
-            self.game.puck_player_collision(
-                self.game.player.get_player_pos(), self.game.player.get_player_size()
-            )
-            and -1 <= puck_vect_norm_x < 0
-        ):
-            reward += 0.3
-
-        if puck_curr == puck_last:
+        if pg.math.Vector2(puck_curr).distance_to(pg.math.Vector2(puck_last)) < 0.5:
             reward -= 0.01
 
-        if player_pos_last == player_pos:
-            reward -= 0.005
+        puck_vect_norm_x = self.game.puck.get_puck_vect()[0][0]
+
+        if self.game.puck_player_collision(
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
+        ):
+            norm_x = self.game.puck.get_puck_vect()[0][0]
+            speed = self.game.puck.get_puck_vect()[1]
+            real_speed = norm_x * speed
+
+            if real_speed < 0:
+                reward += abs(real_speed) * 0.05
 
         w, h = Screen_helper.get_size()
+
         if puck_curr[0] > w / 2:
             reward -= 0.005
+        elif puck_curr[0] < w / 2:
+            defense_line = w * 0.75
+            if self.game.player.get_player_pos()[0] < defense_line:
+                reward -= 0.005
 
         (top, bottom, left, right, _) = self.game.board.get_board_bounds()
         size = self.game.player.get_player_size()
         max_x = right - size
-        if self.game.player.get_player_pos()[0] == max_x:
+        pos_x = self.game.player.get_player_pos()[0]
+        pos_y = self.game.player.get_player_pos()[1]
+        if pos_x >= max_x - 10:
             reward -= 0.005
 
-        # 3. stuck safety (Truncation)
-        if self.current_step >= self.max_steps:
-            truncated = True
-            # punish for not doing anything
-            # reward -= 5
+        if pos_y - size <= top + 10 or pos_y + size >= bottom - 10:
+            reward -= 0.005
 
-        # 4. observation after move
+        if self.current_step >= self.max_steps:
+            reward -= 100
+            truncated = True
+
         observation = self._get_obs()
 
         return observation, reward, terminated, truncated, {}
