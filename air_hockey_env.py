@@ -122,8 +122,10 @@ class AirHockeyEnv(gym.Env):
     def step(self, action):
         self.current_step += 1
 
-        # --- 1. Symulacja ---
-        game_result = self.game.run_frame_ai(action)
+        if getattr(self, "human_playing", False):
+            game_result = self.game.run_frame_play_vs_ai(action)
+        else:
+            game_result = self.game.run_frame_ai(action)
 
         reward = 0.0
         terminated = False
@@ -150,7 +152,7 @@ class AirHockeyEnv(gym.Env):
         # =========================================================
         # --- 4. TARGET ZA KRĄŻKIEM (pozycja do strzału)
         # =========================================================
-        dir_to_puck = (puck_curr - opponent_goal)
+        dir_to_puck = puck_curr - opponent_goal
 
         if dir_to_puck.length() > 0:
             dir_to_puck = dir_to_puck.normalize()
@@ -177,22 +179,23 @@ class AirHockeyEnv(gym.Env):
         # =========================================================
         # --- 6. NIE WCHODŹ PRZED KRĄŻEK
         # =========================================================
-        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(opponent_goal):
+        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(
+            opponent_goal
+        ):
             reward -= 0.4
 
         # =========================================================
         # --- 7. KONTAKT = STRZAŁ (klucz dla strikera)
         # =========================================================
         if self.game.puck_player_collision(
-                self.game.player.get_player_pos(),
-                self.game.player.get_player_size()
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
         ):
             puck_dir = pg.math.Vector2(self.game.puck.get_puck_vect()[0])
             puck_speed = self.game.puck.get_puck_vect()[1]
 
             if puck_dir.length() > 0:
                 puck_vel = puck_dir.normalize() * puck_speed
-                to_goal = (opponent_goal - puck_curr)
+                to_goal = opponent_goal - puck_curr
 
                 if to_goal.length() > 0:
                     to_goal = to_goal.normalize()
@@ -228,7 +231,11 @@ class AirHockeyEnv(gym.Env):
 
         # 🔥 bonus jeśli szybko strzeli w strefie
         if puck_curr.x < w * 0.25:
-            if puck_last.distance_to(opponent_goal) - puck_curr.distance_to(opponent_goal) > 5:
+            if (
+                puck_last.distance_to(opponent_goal)
+                - puck_curr.distance_to(opponent_goal)
+                > 5
+            ):
                 reward += 1.0
 
         # =========================================================
@@ -317,7 +324,8 @@ class AirHockeyEnv(gym.Env):
                 float(p_norm_vec[1] * p_speed) / 20.0,  # 4. Puck Vy
                 float(ai_pos[0]) / w,  # 5. AI X
                 float(ai_pos[1]) / h,  # 6. AI Y
-                float(ai_vel_x) / 15.0,  # 7. AI Vx (dzielone przez speed_limit)
+                # 7. AI Vx (dzielone przez speed_limit)
+                float(ai_vel_x) / 15.0,
                 float(ai_vel_y) / 15.0,  # 8. AI Vy
                 float(opp_pos[0]) / w,  # 9. Opponent X
                 float(opp_pos[1]) / h,  # 10. Opponent Y
@@ -328,3 +336,4 @@ class AirHockeyEnv(gym.Env):
         )
 
         return obs
+
