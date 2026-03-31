@@ -131,15 +131,14 @@ class AirHockeyEnv(gym.Env):
         terminated = False
         truncated = False
 
-        # --- 2. Wynik meczu ---
+        # --- WYNIK GRY ---
         if game_result == 1:
-            reward += 20.0  # większy nacisk na gole
+            reward += 20.0
             terminated = True
         elif game_result == -1:
             reward -= 15.0
             terminated = True
 
-        # --- 3. Dane ---
         puck_curr = pg.math.Vector2(self.game.puck.puck_pos_curr)
         puck_last = pg.math.Vector2(self.game.puck.puck_pos_last)
 
@@ -148,9 +147,10 @@ class AirHockeyEnv(gym.Env):
 
         w, h = Screen_helper.get_size()
         opponent_goal = pg.math.Vector2(0, h / 2)
+        own_goal = pg.math.Vector2(w, h / 2)  # Założenie: gracz broni prawej strony boiska
 
         # =========================================================
-        # --- 4. TARGET ZA KRĄŻKIEM (pozycja do strzału)
+        # --- 1. POZYCJONOWANIE (MIĘDZY KRĄŻKIEM A WŁASNĄ BRAMKĄ)
         # =========================================================
         dir_to_puck = puck_curr - opponent_goal
 
@@ -164,20 +164,14 @@ class AirHockeyEnv(gym.Env):
             if new_dist < old_dist:
                 reward += 0.25
             else:
-                reward -= 0.15
+                reward -= 0.1
+
+        # Surowa kara, jeśli agent znajdzie się PRZED krążkiem (pomiędzy krążkiem a bramką przeciwnika)
+        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(opponent_goal):
+            reward -= 0.5
 
         # =========================================================
-        # --- 5. RUCH (lekki)
-        # =========================================================
-        movement = player_pos_curr.distance_to(player_pos_last)
-
-        if movement < 2.0:
-            reward -= 0.05
-        else:
-            reward += 0.05
-
-        # =========================================================
-        # --- 6. NIE WCHODŹ PRZED KRĄŻEK
+        # --- 2. KONTROLA POŁOWY (KRĄŻEK JAK NAJKRÓCEJ U NAS)
         # =========================================================
         if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(
             opponent_goal
@@ -185,7 +179,7 @@ class AirHockeyEnv(gym.Env):
             reward -= 0.4
 
         # =========================================================
-        # --- 7. KONTAKT = STRZAŁ (klucz dla strikera)
+        # --- 3. ANTY FLICK I PRECYZJA STRZAŁU
         # =========================================================
         if self.game.puck_player_collision(
             self.game.player.get_player_pos(), self.game.player.get_player_size()
@@ -201,34 +195,36 @@ class AirHockeyEnv(gym.Env):
                     to_goal = to_goal.normalize()
                     alignment = puck_vel.normalize().dot(to_goal)
 
-                    # 🔥 zawsze mały bonus za kontakt
-                    reward += 0.3
+        if self.hit_cooldown > 0:
+            self.hit_cooldown -= 1
 
-                    # 🔥 mocny reward za DOBRY strzał
-                    if alignment > 0.7:
-                        reward += 5.0
+        collision = self.game.puck_player_collision(
+            self.game.player.get_player_pos(),
+            self.game.player.get_player_size()
+        )
 
-                        # 🚀 bonus za prędkość (agresja)
-                        reward += puck_speed * 0.15
+        if collision:
+            if self.hit_cooldown > 0:
+                reward -= 5.0  # Kara za spamowanie kolizji (flick)
+            else:
+                self.hit_cooldown = 8
 
-                    elif alignment < 0:
-                        reward -= 4.0  # samobój
+                puck_dir = pg.math.Vector2(self.game.puck.get_puck_vect()[0])
+                puck_speed = self.game.puck.get_puck_vect()[1]
 
-        # =========================================================
-        # --- 8. STREFA ATAKU (wymusza strzał)
-        # =========================================================
-        if not hasattr(self, "attack_timer"):
-            self.attack_timer = 0
+                if puck_dir.length() > 0:
+                    puck_vel = puck_dir.normalize() * puck_speed
+                    to_opponent_goal = opponent_goal - puck_curr
 
-        if puck_curr.x < w * 0.3:
-            self.attack_timer += 1
-        else:
-            self.attack_timer = 0
+                    if to_opponent_goal.length() > 0:
+                        alignment = puck_vel.normalize().dot(to_opponent_goal.normalize())
 
-        # ❌ za długie trzymanie krążka = kara
-        if self.attack_timer > 25:
-            reward -= 0.3
-
+                        # Opłaca się tylko celny strzał
+                        if alignment > 0.7:
+                            reward += 6.0
+                            reward += puck_speed * 0.2  # Premia za moc
+                        elif alignment < 0:
+                            reward -= 5.0  # Kara za odbicie we własną stronę
         # 🔥 bonus jeśli szybko strzeli w strefie
         if puck_curr.x < w * 0.25:
             if (
@@ -239,38 +235,28 @@ class AirHockeyEnv(gym.Env):
                 reward += 1.0
 
         # =========================================================
-        # --- 9. RUCH KRĄŻKA (ale słabszy niż wcześniej)
+        # --- 4. REDUKCJA NAGRODY ZA RUCH
         # =========================================================
-        old_goal_dist = puck_last.distance_to(opponent_goal)
-        new_goal_dist = puck_curr.distance_to(opponent_goal)
-
-        if new_goal_dist < old_goal_dist:
-            reward += 0.02
-        else:
-            reward -= 0.02
+        move = player_pos_curr.distance_to(player_pos_last)
+        if move < 1:
+            reward -= 0.1  # Niewielka kara za całkowite zamarcie (zapobiega AFK)
+        # Całkowicie usunięto premię za to, że agent po prostu się rusza, by uniknąć "drgawek".
 
         # =========================================================
-        # --- 10. ŚCIANY (lekko)
+        # --- 5. ŚCIANY I LIMIT
         # =========================================================
         (top, bottom, left, right, _) = self.game.board.get_board_bounds()
         size = self.game.player.get_player_size()
 
         if player_pos_curr.x >= right - size - 5:
             reward -= 0.1
-
         if player_pos_curr.y <= top + 5 or player_pos_curr.y >= bottom - 5:
             reward -= 0.05
 
-        # =========================================================
-        # --- 11. LIMIT KROKÓW
-        # =========================================================
         if self.current_step >= self.max_steps:
             reward -= 5.0
             truncated = True
 
-        # =========================================================
-        # --- 12. CLAMP (PPO stability)
-        # =========================================================
         reward = max(min(reward, 15), -15)
 
         observation = self._get_obs()
