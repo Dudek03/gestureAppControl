@@ -122,7 +122,10 @@ class AirHockeyEnv(gym.Env):
     def step(self, action):
         self.current_step += 1
 
-        game_result = self.game.run_frame_ai(action)
+        if getattr(self, "human_playing", False):
+            game_result = self.game.run_frame_play_vs_ai(action)
+        else:
+            game_result = self.game.run_frame_ai(action)
 
         reward = 0.0
         terminated = False
@@ -149,15 +152,17 @@ class AirHockeyEnv(gym.Env):
         # =========================================================
         # --- 1. POZYCJONOWANIE (MIĘDZY KRĄŻKIEM A WŁASNĄ BRAMKĄ)
         # =========================================================
-        to_own_goal = own_goal - puck_curr
-        if to_own_goal.length() > 0:
-            dir_to_own_goal = to_own_goal.normalize()
-            # Wyznaczamy idealny punkt: trochę za krążkiem, na linii do naszej bramki
-            target_pos = puck_curr + dir_to_own_goal * 40
+        dir_to_puck = puck_curr - opponent_goal
 
-            # Nagroda za zbliżanie się do punktu defensywnego
-            if player_pos_curr.distance_to(target_pos) < player_pos_last.distance_to(target_pos):
-                reward += 0.2
+        if dir_to_puck.length() > 0:
+            dir_to_puck = dir_to_puck.normalize()
+            target_pos = puck_curr + dir_to_puck * 35  # bliżej = bardziej agresywny
+
+            old_dist = player_pos_last.distance_to(target_pos)
+            new_dist = player_pos_curr.distance_to(target_pos)
+
+            if new_dist < old_dist:
+                reward += 0.25
             else:
                 reward -= 0.1
 
@@ -168,17 +173,27 @@ class AirHockeyEnv(gym.Env):
         # =========================================================
         # --- 2. KONTROLA POŁOWY (KRĄŻEK JAK NAJKRÓCEJ U NAS)
         # =========================================================
-        # x > w / 2 oznacza prawą połowę (połowę gracza)
-        if puck_curr.x > w / 2:
-            reward -= 0.15  # Ciągła kara za utrzymywanie się zagrożenia
-        else:
-            reward += 0.05  # Niewielka premia za trzymanie gry z dala od bramki
+        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(
+            opponent_goal
+        ):
+            reward -= 0.4
 
         # =========================================================
         # --- 3. ANTY FLICK I PRECYZJA STRZAŁU
         # =========================================================
-        if not hasattr(self, "hit_cooldown"):
-            self.hit_cooldown = 0
+        if self.game.puck_player_collision(
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
+        ):
+            puck_dir = pg.math.Vector2(self.game.puck.get_puck_vect()[0])
+            puck_speed = self.game.puck.get_puck_vect()[1]
+
+            if puck_dir.length() > 0:
+                puck_vel = puck_dir.normalize() * puck_speed
+                to_goal = opponent_goal - puck_curr
+
+                if to_goal.length() > 0:
+                    to_goal = to_goal.normalize()
+                    alignment = puck_vel.normalize().dot(to_goal)
 
         if self.hit_cooldown > 0:
             self.hit_cooldown -= 1
@@ -210,6 +225,14 @@ class AirHockeyEnv(gym.Env):
                             reward += puck_speed * 0.2  # Premia za moc
                         elif alignment < 0:
                             reward -= 5.0  # Kara za odbicie we własną stronę
+        # 🔥 bonus jeśli szybko strzeli w strefie
+        if puck_curr.x < w * 0.25:
+            if (
+                puck_last.distance_to(opponent_goal)
+                - puck_curr.distance_to(opponent_goal)
+                > 5
+            ):
+                reward += 1.0
 
         # =========================================================
         # --- 4. REDUKCJA NAGRODY ZA RUCH
@@ -287,7 +310,8 @@ class AirHockeyEnv(gym.Env):
                 float(p_norm_vec[1] * p_speed) / 20.0,  # 4. Puck Vy
                 float(ai_pos[0]) / w,  # 5. AI X
                 float(ai_pos[1]) / h,  # 6. AI Y
-                float(ai_vel_x) / 15.0,  # 7. AI Vx (dzielone przez speed_limit)
+                # 7. AI Vx (dzielone przez speed_limit)
+                float(ai_vel_x) / 15.0,
                 float(ai_vel_y) / 15.0,  # 8. AI Vy
                 float(opp_pos[0]) / w,  # 9. Opponent X
                 float(opp_pos[1]) / h,  # 10. Opponent Y
@@ -298,3 +322,4 @@ class AirHockeyEnv(gym.Env):
         )
 
         return obs
+
