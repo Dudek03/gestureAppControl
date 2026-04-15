@@ -51,6 +51,35 @@ class Game:
 
         return
 
+    def run_frame_play_vs_ai(self, action):
+        self.player.move_ai_step(action[0], action[1])
+        self._apply_boundaries(self.player, side="right")
+
+        self.opponent.update_player_pos()
+        self._apply_boundaries(self.opponent, side="left")
+
+        self.puck.update()
+        self.puck_validation()
+
+        if self.puck_player_collision(
+            self.player.get_player_pos(), self.player.get_player_size()
+        ):
+            self.calculate_puck_vect_on_player_collide(self.player)
+
+        if self.puck_player_collision(
+            self.opponent.get_player_pos(), self.opponent.get_player_size()
+        ):
+            self.calculate_puck_vect_on_player_collide(self.opponent)
+
+        if self.check_goal_left():
+            self.score.add_point_right()
+            return 1
+        elif self.check_goal_right():
+            self.score.add_point_left()
+            return -1
+
+        return 0
+
     def update(self):
         self.update_player()
         self._move_opponent_script()
@@ -159,8 +188,8 @@ class Game:
         o_pos = self.opponent.get_player_pos()
         mid_x = self.board.middle_line_start[0] + 20
         center_y = self.board.top + (self.board.board_size[1] / 2)
-        speed = 0.4  # was 0.8
-        slower_speed = 0.2  # was 0.5
+        speed = 0.6  # was 0.8
+        slower_speed = 0.4  # was 0.5
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
@@ -237,8 +266,7 @@ class Game:
         puck_pos = self.puck.get_puck_pos()
         puck_size = self.puck.get_puck_size()
         radius_sum = player_size + puck_size
-        collision_vect = pg.math.Vector2(
-            puck_pos) - pg.math.Vector2(player_pos)
+        collision_vect = pg.math.Vector2(puck_pos) - pg.math.Vector2(player_pos)
         dist = collision_vect.length()
         return dist < radius_sum
 
