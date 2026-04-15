@@ -12,7 +12,6 @@ Screen_helper.set_screen_size(screen_size)
 clock = pg.time.Clock()
 running = True
 dt = 0
-
 min_screen_size = (700, 400)
 
 if __name__ == "__main__":
