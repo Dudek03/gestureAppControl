@@ -4,6 +4,7 @@ from Screen_helper import Screen_helper
 from UI_settings import UI_settings
 from gesture_controll import HandTracker
 
+
 class Player:
     def __init__(self, side="left", is_ai=False):
         self.is_ai = is_ai
@@ -36,6 +37,19 @@ class Player:
         self.player_pos_last = self.start_pos.copy()
         self.player_vect = pg.Vector2(0, 0)
 
+    def update_player_pos_hand(self, hand_pos):
+        if self.is_ai:
+            return
+
+        self.player_pos_last = self.player_pos_curr.copy()
+
+        update_vect = pg.math.Vector2(hand_pos) - self.player_pos_last
+
+        if update_vect.length() > self.max_player_speed:
+            update_vect.scale_to_length(self.max_player_speed)
+
+        self.player_pos_curr = self.player_pos_last + update_vect
+
     def update_player_pos(self):
         if self.is_ai:
             return
@@ -43,9 +57,7 @@ class Player:
 
         pos = self.tracker.get_position()
 
-        update_vect = pg.Vector2(
-            pg.Vector2(pos[0], pos[1]) - self.player_pos_last
-        )
+        update_vect = pg.Vector2(pg.Vector2(pos[0], pos[1]) - self.player_pos_last)
         if update_vect.length() > self.max_player_speed:
             update_vect = update_vect.normalize() * self.max_player_speed
         self.player_pos_curr = self.player_pos_last + update_vect

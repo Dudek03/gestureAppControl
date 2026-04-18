@@ -51,11 +51,14 @@ class Game:
 
         return
 
-    def run_frame_play_vs_ai(self, action):
+    def run_frame_play_vs_ai(self, action, hand_pos=None):
         self.player.move_ai_step(action[0], action[1])
         self._apply_boundaries(self.player, side="right")
 
-        self.opponent.update_player_pos()
+        if hand_pos is not None:
+            self.opponent.update_player_pos_hand(hand_pos)
+        else:
+            self.opponent.update_player_pos()
         self._apply_boundaries(self.opponent, side="left")
 
         self.puck.update()
