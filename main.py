@@ -196,7 +196,7 @@ def play_game(opponent_mode, control_mode, screen, clock):
     model = None
     if opponent_mode == "AI":
         print("Przeciwnik: Wyuczone AI")
-        model_path = "models/PPO/14000000.zip"  # PODMIEŃ NA SWÓJ MODEL!
+        model_path = "./3900000.zip"
         model = PPO.load(model_path, env=env)
     else:
         print("Przeciwnik: Skryptowany Bot")
