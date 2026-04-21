@@ -16,7 +16,7 @@ class AirHockeyEnv(gym.Env):
 
         pg.init()
         screen_size = (800, 600)
-        screen = pg.display.set_mode(screen_size)
+        screen = pg.display.set_mode(screen_size, pg.RESIZABLE)
         Screen_helper.set_screen(screen)
         Screen_helper.set_screen_size(screen_size)
         self.game = Game(mode="training")
@@ -123,14 +123,15 @@ class AirHockeyEnv(gym.Env):
         self.current_step += 1
 
         if getattr(self, "human_playing", False):
-            game_result = self.game.run_frame_play_vs_ai(action)
+            hand_pos = getattr(self, "current_hand_pos", None)
+            game_result = self.game.run_frame_play_vs_ai(action, hand_pos=hand_pos)
         else:
             game_result = self.game.run_frame_ai(action)
 
         reward = 0.0
         terminated = False
         truncated = False
-
+        self.hit_cooldown = 0
         # --- WYNIK GRY ---
         if game_result == 1:
             reward += 20.0
@@ -147,7 +148,8 @@ class AirHockeyEnv(gym.Env):
 
         w, h = Screen_helper.get_size()
         opponent_goal = pg.math.Vector2(0, h / 2)
-        own_goal = pg.math.Vector2(w, h / 2)  # Założenie: gracz broni prawej strony boiska
+        # Założenie: gracz broni prawej strony boiska
+        own_goal = pg.math.Vector2(w, h / 2)
 
         # =========================================================
         # --- 1. POZYCJONOWANIE (MIĘDZY KRĄŻKIEM A WŁASNĄ BRAMKĄ)
@@ -167,7 +169,9 @@ class AirHockeyEnv(gym.Env):
                 reward -= 0.1
 
         # Surowa kara, jeśli agent znajdzie się PRZED krążkiem (pomiędzy krążkiem a bramką przeciwnika)
-        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(opponent_goal):
+        if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(
+            opponent_goal
+        ):
             reward -= 0.5
 
         # =========================================================
@@ -199,8 +203,7 @@ class AirHockeyEnv(gym.Env):
             self.hit_cooldown -= 1
 
         collision = self.game.puck_player_collision(
-            self.game.player.get_player_pos(),
-            self.game.player.get_player_size()
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
         )
 
         if collision:
@@ -217,7 +220,9 @@ class AirHockeyEnv(gym.Env):
                     to_opponent_goal = opponent_goal - puck_curr
 
                     if to_opponent_goal.length() > 0:
-                        alignment = puck_vel.normalize().dot(to_opponent_goal.normalize())
+                        alignment = puck_vel.normalize().dot(
+                            to_opponent_goal.normalize()
+                        )
 
                         # Opłaca się tylko celny strzał
                         if alignment > 0.7:
@@ -239,7 +244,8 @@ class AirHockeyEnv(gym.Env):
         # =========================================================
         move = player_pos_curr.distance_to(player_pos_last)
         if move < 1:
-            reward -= 0.1  # Niewielka kara za całkowite zamarcie (zapobiega AFK)
+            # Niewielka kara za całkowite zamarcie (zapobiega AFK)
+            reward -= 0.1
         # Całkowicie usunięto premię za to, że agent po prostu się rusza, by uniknąć "drgawek".
 
         # =========================================================
@@ -322,4 +328,3 @@ class AirHockeyEnv(gym.Env):
         )
 
         return obs
-
