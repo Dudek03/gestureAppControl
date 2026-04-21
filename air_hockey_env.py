@@ -131,7 +131,7 @@ class AirHockeyEnv(gym.Env):
         reward = 0.0
         terminated = False
         truncated = False
-
+        self.hit_cooldown=0
         # --- WYNIK GRY ---
         if game_result == 1:
             reward += 20.0

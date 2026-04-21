@@ -42,7 +42,7 @@ from air_hockey_env import AirHockeyEnv
 # Twoje stare, dobre importy:
 from Screen_helper import Screen_helper
 from UI_settings import UI_settings
-from handTracking import HandTracker
+from gesture_controll import HandTracker
 
 # --- KONFIGURACJA KOLORÓW MENU ---
 BG_COLOR = (30, 30, 30)
