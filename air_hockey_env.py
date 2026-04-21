@@ -16,7 +16,7 @@ class AirHockeyEnv(gym.Env):
 
         pg.init()
         screen_size = (800, 600)
-        screen = pg.display.set_mode(screen_size)
+        screen = pg.display.set_mode(screen_size, pg.RESIZABLE)
         Screen_helper.set_screen(screen)
         Screen_helper.set_screen_size(screen_size)
         self.game = Game(mode="training")
@@ -131,7 +131,7 @@ class AirHockeyEnv(gym.Env):
         reward = 0.0
         terminated = False
         truncated = False
-        self.hit_cooldown=0
+        self.hit_cooldown = 0
         # --- WYNIK GRY ---
         if game_result == 1:
             reward += 20.0

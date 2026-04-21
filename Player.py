@@ -30,7 +30,6 @@ class Player:
         )
 
         self.speed_limit = 15
-        self.tracker = HandTracker()
 
     def reset(self):
         self.player_pos_curr = self.start_pos.copy()
@@ -54,10 +53,13 @@ class Player:
         if self.is_ai:
             return
         self.player_pos_last = self.player_pos_curr.copy()
-
-        pos = self.tracker.get_position()
-
-        update_vect = pg.Vector2(pg.Vector2(pos[0], pos[1]) - self.player_pos_last)
+        mouse_pos = pg.mouse.get_pos()
+        update_vect = pg.Vector2(
+            pg.Vector2(mouse_pos[0], mouse_pos[1]) - self.player_pos_last
+        )
+        update_vect = pg.Vector2(
+            pg.Vector2(mouse_pos[0], mouse_pos[1]) - self.player_pos_last
+        )
         if update_vect.length() > self.max_player_speed:
             update_vect = update_vect.normalize() * self.max_player_speed
         self.player_pos_curr = self.player_pos_last + update_vect

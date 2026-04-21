@@ -6,7 +6,6 @@ from air_hockey_env import AirHockeyEnv
 from Screen_helper import Screen_helper
 from UI_settings import UI_settings
 
-# --- KONFIGURACJA KOLORÓW MENU ---
 BG_COLOR = (30, 30, 30)
 COLOR_UNSELECTED = (100, 100, 100)
 COLOR_SELECTED = (46, 204, 113)
@@ -14,6 +13,8 @@ COLOR_HOVER = (130, 130, 130)
 COLOR_START = (52, 152, 219)
 COLOR_START_HOVER = (41, 128, 185)
 TEXT_COLOR = (255, 255, 255)
+
+min_screen_size = (700, 400)
 
 
 def draw_text(surface, text, font, color, center):
@@ -23,42 +24,69 @@ def draw_text(surface, text, font, color, center):
 
 
 def main_menu(screen, w, h, clock):
+    # Czcionki zostawiamy stałe, by uniknąć zniekształceń, ale możesz je też skalować!
     font_title = pg.font.SysFont("Arial", 50, bold=True)
     font_subtitle = pg.font.SysFont("Arial", 25, bold=True)
     font_btn = pg.font.SysFont("Arial", 22)
 
-    # Domyślne ustawienia
     opponent_mode = "AI"
     control_mode = "MOUSE"
-    hand_model_mode = "MEDIAPIPE"  # Domyślny model ręki
-
-    btn_w, btn_h = 280, 45
-
-    # Grupa 1 (Przeciwnik)
-    btn_ai_rect = pg.Rect(w // 2 - btn_w - 20, 160, btn_w, btn_h)
-    btn_bot_rect = pg.Rect(w // 2 + 20, 160, btn_w, btn_h)
-
-    # Grupa 2 (Sterowanie)
-    btn_mouse_rect = pg.Rect(w // 2 - btn_w - 20, 270, btn_w, btn_h)
-    btn_hand_rect = pg.Rect(w // 2 + 20, 270, btn_w, btn_h)
-
-    # Grupa 3 (Wybór Modelu - pojawi się tylko, gdy control_mode == "HAND")
-    btn_mp_rect = pg.Rect(w // 2 - btn_w - 20, 380, btn_w, btn_h)
-    btn_own_rect = pg.Rect(w // 2 + 20, 380, btn_w, btn_h)
-
-    # Przycisk Start
-    btn_start_rect = pg.Rect(w // 2 - 200, 480, 400, 60)
+    hand_model_mode = "MEDIAPIPE"
 
     while True:
         screen.fill(BG_COLOR)
         mouse_pos = pg.mouse.get_pos()
 
-        draw_text(screen, "AIR HOCKEY", font_title, TEXT_COLOR, (w // 2, 60))
+        curr_w, curr_h = screen.get_size()
+
+        btn_w = max(200, int(curr_w * 0.35))
+        btn_h = max(40, int(curr_h * 0.08))
+        gap = int(curr_w * 0.02)
+
+        y_title = int(curr_h * 0.10)  # Tytuł na 10% wysokości
+
+        y_g1_title = int(curr_h * 0.22)  # Grupa 1 na 22%
+        y_g1_btns = int(curr_h * 0.28)  # Przyciski G1 na 28%
+
+        y_g2_title = int(curr_h * 0.42)  # Grupa 2 na 42%
+        y_g2_btns = int(curr_h * 0.48)
+
+        y_g3_title = int(curr_h * 0.62)  # Grupa 3 (Ręka) na 62%
+        y_g3_btns = int(curr_h * 0.68)
+
+        y_start = int(curr_h * 0.85)  # Przycisk start na samym dole (85%)
+        start_h = max(60, int(curr_h * 0.1))
+
+        # ==========================================
+        # TWORZENIE RESPONSYWNYCH HITBOXÓW (RECT)
+        # ==========================================
+        btn_ai_rect = pg.Rect(curr_w // 2 - btn_w - gap, y_g1_btns, btn_w, btn_h)
+        btn_bot_rect = pg.Rect(curr_w // 2 + gap, y_g1_btns, btn_w, btn_h)
+
+        btn_mouse_rect = pg.Rect(curr_w // 2 - btn_w - gap, y_g2_btns, btn_w, btn_h)
+        btn_hand_rect = pg.Rect(curr_w // 2 + gap, y_g2_btns, btn_w, btn_h)
+
+        btn_mp_rect = pg.Rect(curr_w // 2 - btn_w - gap, y_g3_btns, btn_w, btn_h)
+        btn_own_rect = pg.Rect(curr_w // 2 + gap, y_g3_btns, btn_w, btn_h)
+
+        btn_start_rect = pg.Rect(
+            curr_w // 2 - int(curr_w * 0.3), y_start, int(curr_w * 0.6), start_h
+        )
+
+        # ==========================================
+        # RYSOWANIE MENU
+        # ==========================================
+        draw_text(screen, "AIR HOCKEY", font_title, TEXT_COLOR, (curr_w // 2, y_title))
 
         # --- WYBÓR PRZECIWNIKA ---
         draw_text(
-            screen, "Wybierz przeciwnika:", font_subtitle, TEXT_COLOR, (w // 2, 130)
+            screen,
+            "Wybierz przeciwnika:",
+            font_subtitle,
+            TEXT_COLOR,
+            (curr_w // 2, y_g1_title),
         )
+
         c_ai = (
             COLOR_SELECTED
             if opponent_mode == "AI"
@@ -83,8 +111,13 @@ def main_menu(screen, w, h, clock):
 
         # --- WYBÓR STEROWANIA ---
         draw_text(
-            screen, "Wybierz sterowanie:", font_subtitle, TEXT_COLOR, (w // 2, 240)
+            screen,
+            "Wybierz sterowanie:",
+            font_subtitle,
+            TEXT_COLOR,
+            (curr_w // 2, y_g2_title),
         )
+
         c_mouse = (
             COLOR_SELECTED
             if control_mode == "MOUSE"
@@ -109,14 +142,14 @@ def main_menu(screen, w, h, clock):
         pg.draw.rect(screen, c_hand, btn_hand_rect, border_radius=10)
         draw_text(screen, "Ręka (Kamera)", font_btn, TEXT_COLOR, btn_hand_rect.center)
 
-        # --- WYBÓR MODELU RĘKI (Sub-menu) ---
+        # --- WYBÓR MODELU RĘKI ---
         if control_mode == "HAND":
             draw_text(
                 screen,
                 "Model detekcji dłoni:",
                 font_subtitle,
                 (200, 200, 200),
-                (w // 2, 350),
+                (curr_w // 2, y_g3_title),
             )
 
             c_mp = (
@@ -158,7 +191,7 @@ def main_menu(screen, w, h, clock):
                 sys.exit()
 
             if event.type == pg.VIDEORESIZE:
-                screen_size = pg.display.get_window_size()
+                screen_size = (event.w, event.h)
                 min_screen_size = (700, 400)
                 Screen_helper.set_screen_size(
                     (
@@ -192,9 +225,6 @@ def main_menu(screen, w, h, clock):
         clock.tick(60)
 
 
-# Dodaliśmy trzeci parametr do funkcji
-
-
 def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
     env = AirHockeyEnv()
     obs, _ = env.reset()
@@ -204,8 +234,6 @@ def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
 
     tracker = None
     if control_mode == "HAND":
-        # === DYNAMICZNY IMPORT ===
-        # Importujemy odpowiedni plik z klasą HandTracker dopiero tutaj!
         if hand_model_mode == "MEDIAPIPE":
             print("Inicjalizacja kamery: MediaPipe...")
             from gesture_controll import HandTracker
@@ -214,15 +242,15 @@ def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
             from gesture_controll_own_model import HandTracker
 
         tracker = HandTracker()
-        pg.time.wait(1000)  # Dajemy kamerze czas na start
+        pg.time.wait(1000)
     else:
         print("Sterowanie myszką gotowe.")
-        pg.mouse.set_visible(False)
+        pg.mouse.set_visible(True)
 
     model = None
     if opponent_mode == "AI":
         print("Przeciwnik: Wyuczone AI")
-        model_path = "models/PPO/14000000.zip"  # PAMIĘTAJ O PODMIANIE!
+        model_path = "3900000.zip "
         model = PPO.load(model_path, env=env)
     else:
         print("Przeciwnik: Skryptowany Bot")
@@ -235,7 +263,6 @@ def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
                 done = True
             if event.type == pg.VIDEORESIZE:
                 screen_size = pg.display.get_window_size()
-                min_screen_size = (700, 400)
                 Screen_helper.set_screen_size(
                     (
                         (max(screen_size[0], min_screen_size[0])),
