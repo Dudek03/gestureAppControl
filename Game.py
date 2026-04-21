@@ -218,6 +218,42 @@ class Game:
                 vx = speed
         self.opponent.move_ai_step(vx, vy)
 
+    def _move_player_script(self):
+        p_pos = self.puck.get_puck_pos()
+        pl_pos = self.player.get_player_pos()
+
+        mid_x = self.board.middle_line_start[0] - 20
+        center_y = self.board.top + (self.board.board_size[1] / 2)
+
+        speed = 0.6
+        slower_speed = 0.4
+        vx, vy = 0, 0
+
+        if p_pos[0] > mid_x:
+            if p_pos[1] >= pl_pos[1] + 5:
+                vy = speed
+            elif p_pos[1] < pl_pos[1] - 5:
+                vy = -speed
+
+            if p_pos[0] <= pl_pos[0] - 5:
+                vx = -speed
+            elif p_pos[0] > pl_pos[0] + 5:
+                vx = slower_speed
+        else:
+            if pl_pos[1] >= center_y + 5:
+                vy = -speed
+            elif pl_pos[1] < center_y - 5:
+                vy = speed
+
+            target_x = self.board.board_size[0] - (self.board.middle_line_start[0] / 4)
+
+            if pl_pos[0] <= target_x - 5:
+                vx = slower_speed
+            elif pl_pos[0] > target_x + 5:
+                vx = -speed
+
+        return [vx, vy]
+
     def middle_line_validation(self, side, pos):
         (_, _, _, _, middle_x) = self.board.get_board_bounds()
         p = list(pos)

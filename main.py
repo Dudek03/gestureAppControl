@@ -1,48 +1,10 @@
-"""import pygame as pg
-
-from Game import Game
-from Screen_helper import Screen_helper
-from UI_settings import UI_settings
-
-pg.init()
-screen = pg.display.set_mode(UI_settings.get_screen_start_size(), pg.RESIZABLE)
-screen_size = pg.display.get_window_size()
-Screen_helper.set_screen(screen)
-Screen_helper.set_screen_size(screen_size)
-clock = pg.time.Clock()
-running = True
-dt = 0
-min_screen_size = (700, 400)
-
-if __name__ == "__main__":
-    game = Game(mode="normal")
-    while running:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                running = False
-            if event.type == pg.VIDEORESIZE:
-                screen_size = pg.display.get_window_size()
-                Screen_helper.set_screen_size(((max(screen_size[0],min_screen_size[0])),(max(screen_size[1],min_screen_size[1]))))
-                screen = pg.display.set_mode(Screen_helper.get_size(), pg.RESIZABLE)
-                game.on_display_resize()
-        screen.fill(UI_settings.get_screen_fill_color())
-        game.update()
-
-        pg.display.flip()
-
-        dt = clock.tick(60) / 1000
-
-    pg.quit()"""
-
 import pygame as pg
 import sys
 from stable_baselines3 import PPO
 from air_hockey_env import AirHockeyEnv
 
-# Twoje stare, dobre importy:
 from Screen_helper import Screen_helper
 from UI_settings import UI_settings
-from gesture_controll import HandTracker
 
 # --- KONFIGURACJA KOLORÓW MENU ---
 BG_COLOR = (30, 30, 30)
@@ -61,29 +23,41 @@ def draw_text(surface, text, font, color, center):
 
 
 def main_menu(screen, w, h, clock):
-    font_title = pg.font.SysFont("Arial", 60, bold=True)
-    font_subtitle = pg.font.SysFont("Arial", 30, bold=True)
-    font_btn = pg.font.SysFont("Arial", 25)
+    font_title = pg.font.SysFont("Arial", 50, bold=True)
+    font_subtitle = pg.font.SysFont("Arial", 25, bold=True)
+    font_btn = pg.font.SysFont("Arial", 22)
 
+    # Domyślne ustawienia
     opponent_mode = "AI"
     control_mode = "MOUSE"
+    hand_model_mode = "MEDIAPIPE"  # Domyślny model ręki
 
-    btn_w, btn_h = 280, 50
-    btn_ai_rect = pg.Rect(w // 2 - btn_w - 20, 220, btn_w, btn_h)
-    btn_bot_rect = pg.Rect(w // 2 + 20, 220, btn_w, btn_h)
-    btn_mouse_rect = pg.Rect(w // 2 - btn_w - 20, 380, btn_w, btn_h)
-    btn_hand_rect = pg.Rect(w // 2 + 20, 380, btn_w, btn_h)
-    btn_start_rect = pg.Rect(w // 2 - 200, 500, 400, 70)
+    btn_w, btn_h = 280, 45
+
+    # Grupa 1 (Przeciwnik)
+    btn_ai_rect = pg.Rect(w // 2 - btn_w - 20, 160, btn_w, btn_h)
+    btn_bot_rect = pg.Rect(w // 2 + 20, 160, btn_w, btn_h)
+
+    # Grupa 2 (Sterowanie)
+    btn_mouse_rect = pg.Rect(w // 2 - btn_w - 20, 270, btn_w, btn_h)
+    btn_hand_rect = pg.Rect(w // 2 + 20, 270, btn_w, btn_h)
+
+    # Grupa 3 (Wybór Modelu - pojawi się tylko, gdy control_mode == "HAND")
+    btn_mp_rect = pg.Rect(w // 2 - btn_w - 20, 380, btn_w, btn_h)
+    btn_own_rect = pg.Rect(w // 2 + 20, 380, btn_w, btn_h)
+
+    # Przycisk Start
+    btn_start_rect = pg.Rect(w // 2 - 200, 480, 400, 60)
 
     while True:
         screen.fill(BG_COLOR)
         mouse_pos = pg.mouse.get_pos()
 
-        draw_text(screen, "AIR HOCKEY", font_title, TEXT_COLOR, (w // 2, 80))
+        draw_text(screen, "AIR HOCKEY", font_title, TEXT_COLOR, (w // 2, 60))
 
         # --- WYBÓR PRZECIWNIKA ---
         draw_text(
-            screen, "Wybierz przeciwnika:", font_subtitle, TEXT_COLOR, (w // 2, 180)
+            screen, "Wybierz przeciwnika:", font_subtitle, TEXT_COLOR, (w // 2, 130)
         )
         c_ai = (
             COLOR_SELECTED
@@ -109,7 +83,7 @@ def main_menu(screen, w, h, clock):
 
         # --- WYBÓR STEROWANIA ---
         draw_text(
-            screen, "Wybierz sterowanie:", font_subtitle, TEXT_COLOR, (w // 2, 340)
+            screen, "Wybierz sterowanie:", font_subtitle, TEXT_COLOR, (w // 2, 240)
         )
         c_mouse = (
             COLOR_SELECTED
@@ -135,6 +109,40 @@ def main_menu(screen, w, h, clock):
         pg.draw.rect(screen, c_hand, btn_hand_rect, border_radius=10)
         draw_text(screen, "Ręka (Kamera)", font_btn, TEXT_COLOR, btn_hand_rect.center)
 
+        # --- WYBÓR MODELU RĘKI (Sub-menu) ---
+        if control_mode == "HAND":
+            draw_text(
+                screen,
+                "Model detekcji dłoni:",
+                font_subtitle,
+                (200, 200, 200),
+                (w // 2, 350),
+            )
+
+            c_mp = (
+                COLOR_SELECTED
+                if hand_model_mode == "MEDIAPIPE"
+                else (
+                    COLOR_HOVER
+                    if btn_mp_rect.collidepoint(mouse_pos)
+                    else COLOR_UNSELECTED
+                )
+            )
+            pg.draw.rect(screen, c_mp, btn_mp_rect, border_radius=10)
+            draw_text(screen, "MediaPipe", font_btn, TEXT_COLOR, btn_mp_rect.center)
+
+            c_own = (
+                COLOR_SELECTED
+                if hand_model_mode == "OWN_MODEL"
+                else (
+                    COLOR_HOVER
+                    if btn_own_rect.collidepoint(mouse_pos)
+                    else COLOR_UNSELECTED
+                )
+            )
+            pg.draw.rect(screen, c_own, btn_own_rect, border_radius=10)
+            draw_text(screen, "Własny Model", font_btn, TEXT_COLOR, btn_own_rect.center)
+
         # --- START ---
         c_start = (
             COLOR_START_HOVER if btn_start_rect.collidepoint(mouse_pos) else COLOR_START
@@ -148,7 +156,7 @@ def main_menu(screen, w, h, clock):
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
-            # Obsługa zmiany rozmiaru okna w menu
+
             if event.type == pg.VIDEORESIZE:
                 screen_size = pg.display.get_window_size()
                 min_screen_size = (700, 400)
@@ -160,7 +168,6 @@ def main_menu(screen, w, h, clock):
                 )
                 screen = pg.display.set_mode(Screen_helper.get_size(), pg.RESIZABLE)
                 w, h = Screen_helper.get_size()
-                # (Opcjonalnie: można tu ponownie przeliczyć pozycje prostokątów, ale dla uproszczenia centrujemy)
 
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                 if btn_ai_rect.collidepoint(mouse_pos):
@@ -172,12 +179,23 @@ def main_menu(screen, w, h, clock):
                 elif btn_hand_rect.collidepoint(mouse_pos):
                     control_mode = "HAND"
                 elif btn_start_rect.collidepoint(mouse_pos):
-                    return opponent_mode, control_mode
+                    # Zwracamy wszystkie TRZY zmienne!
+                    return opponent_mode, control_mode, hand_model_mode
 
-        clock.tick(60)  # Menu też nie powinno smażyć procesora!
+                # Przyciski modelu klikalne tylko jeśli aktywna jest Ręka
+                if control_mode == "HAND":
+                    if btn_mp_rect.collidepoint(mouse_pos):
+                        hand_model_mode = "MEDIAPIPE"
+                    elif btn_own_rect.collidepoint(mouse_pos):
+                        hand_model_mode = "OWN_MODEL"
+
+        clock.tick(60)
 
 
-def play_game(opponent_mode, control_mode, screen, clock):
+# Dodaliśmy trzeci parametr do funkcji
+
+
+def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
     env = AirHockeyEnv()
     obs, _ = env.reset()
 
@@ -186,9 +204,17 @@ def play_game(opponent_mode, control_mode, screen, clock):
 
     tracker = None
     if control_mode == "HAND":
-        print("Inicjalizacja kamery i MediaPipe...")
+        # === DYNAMICZNY IMPORT ===
+        # Importujemy odpowiedni plik z klasą HandTracker dopiero tutaj!
+        if hand_model_mode == "MEDIAPIPE":
+            print("Inicjalizacja kamery: MediaPipe...")
+            from gesture_controll import HandTracker
+        else:
+            print("Inicjalizacja kamery: Własny Model...")
+            from gesture_controll_own_model import HandTracker
+
         tracker = HandTracker()
-        pg.time.wait(1000)
+        pg.time.wait(1000)  # Dajemy kamerze czas na start
     else:
         print("Sterowanie myszką gotowe.")
         pg.mouse.set_visible(False)
@@ -196,11 +222,10 @@ def play_game(opponent_mode, control_mode, screen, clock):
     model = None
     if opponent_mode == "AI":
         print("Przeciwnik: Wyuczone AI")
-        model_path = "./3900000.zip"
+        model_path = "models/PPO/14000000.zip"  # PAMIĘTAJ O PODMIANIE!
         model = PPO.load(model_path, env=env)
     else:
         print("Przeciwnik: Skryptowany Bot")
-        env.game.player.is_ai = False
 
     done = False
 
@@ -208,7 +233,6 @@ def play_game(opponent_mode, control_mode, screen, clock):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 done = True
-            # Obsługa zmiany rozmiaru okna w trakcie gry
             if event.type == pg.VIDEORESIZE:
                 screen_size = pg.display.get_window_size()
                 min_screen_size = (700, 400)
@@ -221,10 +245,9 @@ def play_game(opponent_mode, control_mode, screen, clock):
                 screen = pg.display.set_mode(Screen_helper.get_size(), pg.RESIZABLE)
                 env.game.on_display_resize()
 
-        # Aktualny rozmiar okna dla Trackera
         screen_w, screen_h = Screen_helper.get_size()
 
-        # Pobieranie pozycji dłoni
+        # Wspólny kod dla HandTrackera (obie klasy mają te same metody!)
         if control_mode == "HAND" and tracker:
             if tracker.get_hand_visible():
                 env.current_hand_pos = tracker.get_position(
@@ -235,16 +258,13 @@ def play_game(opponent_mode, control_mode, screen, clock):
         else:
             env.current_hand_pos = None
 
-        # Ruch przeciwnika
         if opponent_mode == "AI":
             action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(action)
         else:
-            dummy_action = [0, 0]
-            obs, reward, terminated, truncated, info = env.step(dummy_action)
-            env.game._move_opponent_script()
+            action = env.game._move_player_script()
 
-        # Rysowanie tła przed renderem gry (pobierane z UI_settings!)
+        obs, reward, terminated, truncated, info = env.step(action)
+
         screen.fill(UI_settings.get_screen_fill_color())
 
         env.render()
@@ -253,7 +273,6 @@ def play_game(opponent_mode, control_mode, screen, clock):
         if terminated or truncated:
             obs, _ = env.reset()
 
-        # ZEGAR Z TWOJEGO STAREGO MAIN! Pilnuje stałych 60 FPS.
         clock.tick(60)
 
     pg.mouse.set_visible(True)
@@ -265,7 +284,6 @@ def play_game(opponent_mode, control_mode, screen, clock):
 def main():
     pg.init()
 
-    # Inicjalizacja z Twojego starego main.py
     screen = pg.display.set_mode(UI_settings.get_screen_start_size(), pg.RESIZABLE)
     screen_size = pg.display.get_window_size()
     Screen_helper.set_screen(screen)
@@ -275,9 +293,12 @@ def main():
     clock = pg.time.Clock()
 
     w, h = Screen_helper.get_size()
-    opp_mode, ctrl_mode = main_menu(screen, w, h, clock)
 
-    play_game(opp_mode, ctrl_mode, screen, clock)
+    # Odbieramy trzy zmienne z menu
+    opp_mode, ctrl_mode, hand_mode = main_menu(screen, w, h, clock)
+
+    # Przekazujemy je dalej
+    play_game(opp_mode, ctrl_mode, hand_mode, screen, clock)
 
 
 if __name__ == "__main__":
