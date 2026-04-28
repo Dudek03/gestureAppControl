@@ -16,7 +16,7 @@ class AirHockeyEnv(gym.Env):
 
         pg.init()
         screen_size = (800, 600)
-        screen = pg.display.set_mode(screen_size)
+        screen = pg.display.set_mode(screen_size, pg.RESIZABLE)
         Screen_helper.set_screen(screen)
         Screen_helper.set_screen_size(screen_size)
         self.game = Game(mode="training")
@@ -155,7 +155,8 @@ class AirHockeyEnv(gym.Env):
 
         # Run game frame
         if getattr(self, "human_playing", False):
-            game_result = self.game.run_frame_play_vs_ai(action)
+            hand_pos = getattr(self, "current_hand_pos", None)
+            game_result = self.game.run_frame_play_vs_ai(action, hand_pos=hand_pos)
         else:
             game_result = self.game.run_frame_ai(action)
 
@@ -178,6 +179,8 @@ class AirHockeyEnv(gym.Env):
 
         w, h = Screen_helper.get_size()
         opponent_goal = pg.math.Vector2(0, h / 2)
+        # Założenie: gracz broni prawej strony boiska
+        own_goal = pg.math.Vector2(w, h / 2)
 
         # 1. POSITIONING & SHADOWING
         dir_to_puck = puck_curr - opponent_goal
@@ -206,8 +209,7 @@ class AirHockeyEnv(gym.Env):
             self.hit_cooldown -= 1
 
         collision = self.game.puck_player_collision(
-            self.game.player.get_player_pos(),
-            self.game.player.get_player_size()
+            self.game.player.get_player_pos(), self.game.player.get_player_size()
         )
 
         if collision:
