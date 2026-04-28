@@ -21,11 +21,10 @@ class AirHockeyEnv(gym.Env):
         Screen_helper.set_screen_size(screen_size)
         self.game = Game(mode="training")
 
-        # AI continously controls speed < -1 ; 1 >
-        # [vel_x, vel_y]
+        # AI controls velocity in range <-1, 1>
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
-        #  [puck_x, puck_y, puck_vx, puck_vy, ai_x, ai_y, ai_vx, ai_vy, opp_x, opp_y, opp_vx, opp_vy]
+        # Observation space: 12 normalized elements
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(12,), dtype=np.float32
         )
@@ -33,21 +32,128 @@ class AirHockeyEnv(gym.Env):
         self.clock = pg.time.Clock()
         self.max_steps = 1000
         self.current_step = 0
-        self.hit_cooldown = 0  # Zainicjowany cooldown
+        self.hit_cooldown = 0
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
         self.game.reset()
         self.current_step = 0
-        self.hit_cooldown = 0  # Wyzerowany cooldown przy restarcie środowiska
+        self.hit_cooldown = 0
 
         return self._get_obs(), {}
+
+    # def step(self, action):
+    #     self.current_step += 1
+    #
+    #     # Run game frame
+    #     if getattr(self, "human_playing", False):
+    #         game_result = self.game.run_frame_play_vs_ai(action)
+    #     else:
+    #         game_result = self.game.run_frame_ai(action)
+    #
+    #     reward = 0.0
+    #     terminated = False
+    #     truncated = False
+    #
+    #     # Check for terminal states (goals)
+    #     if game_result == 1:
+    #         reward += 20.0
+    #         terminated = True
+    #     elif game_result == -1:
+    #         reward -= 25.0
+    #         terminated = True
+    #
+    #     # Get necessary positions as vectors
+    #     puck_curr = pg.math.Vector2(self.game.puck.puck_pos_curr)
+    #     player_pos_last = pg.math.Vector2(self.game.player.get_player_last_pos())
+    #     player_pos_curr = pg.math.Vector2(self.game.player.get_player_pos())
+    #
+    #     w, h = Screen_helper.get_size()
+    #     opponent_goal = pg.math.Vector2(0, h / 2)
+    #
+    #     # 1. POSITIONING & SHADOWING
+    #     dir_to_puck = puck_curr - opponent_goal
+    #     new_dist = 0
+    #
+    #     if dir_to_puck.length() > 0:
+    #         # Normalize vector to avoid extreme coordinates
+    #         dir_to_puck_norm = dir_to_puck.normalize()
+    #         target_pos = puck_curr + dir_to_puck_norm * 35
+    #
+    #         old_dist = player_pos_last.distance_to(target_pos)
+    #         new_dist = player_pos_curr.distance_to(target_pos)
+    #
+    #         # Reward moving towards the target position
+    #         if new_dist < old_dist:
+    #             reward += 0.25
+    #         else:
+    #             reward -= 0.2
+    #
+    #     # Penalize if AI is out of position
+    #     if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(opponent_goal):
+    #         reward -= 1
+    #
+    #     # 2. COLLISION & ACCURACY
+    #     if self.hit_cooldown > 0:
+    #         self.hit_cooldown -= 1
+    #
+    #     collision = self.game.puck_player_collision(
+    #         self.game.player.get_player_pos(),
+    #         self.game.player.get_player_size()
+    #     )
+    #
+    #     if collision:
+    #         # Prevent reward spamming on multi-collisions
+    #         if self.hit_cooldown > 0:
+    #             reward -= 5.0
+    #         else:
+    #             self.hit_cooldown = 8
+    #
+    #             puck_dir = pg.math.Vector2(self.game.puck.get_puck_vect()[0])
+    #             puck_speed = self.game.puck.get_puck_vect()[1]
+    #
+    #             if puck_dir.length() > 0:
+    #                 puck_vel = puck_dir.normalize() * puck_speed
+    #                 to_opponent_goal = opponent_goal - puck_curr
+    #                 alignment = puck_vel.normalize().dot(to_opponent_goal.normalize())
+    #
+    #                 # Reward well-aimed hits
+    #                 if alignment > 0.7:
+    #                     reward += 10.0 + (puck_speed * 0.3)
+    #                 elif alignment < 0:
+    #                     reward -= 8.0
+    #
+    #     # 3. MOVEMENT CONSTRAINTS
+    #     # Penalize standing still only if far from target
+    #     if new_dist > 20:
+    #         move = player_pos_curr.distance_to(player_pos_last)
+    #         if move < 2:
+    #             reward -= 2
+    #
+    #     # Penalize hugging walls
+    #     (top, bottom, left, right, _) = self.game.board.get_board_bounds()
+    #     size = self.game.player.get_player_size()
+    #
+    #     if player_pos_curr.x >= right - size - 5:
+    #         reward -= 0.2
+    #     if player_pos_curr.y <= top + 5 or player_pos_curr.y >= bottom - 5:
+    #         reward -= 0.1
+    #
+    #     # Check time limit
+    #     if self.current_step >= self.max_steps:
+    #         reward -= 8.0
+    #         truncated = True
+    #
+    #     # Clip rewards to stabilize training
+    #     reward = max(min(reward, 15), -15)
+    #
+    #     return self._get_obs(), reward, terminated, truncated, {}
 
     def step(self, action):
         self.current_step += 1
 
-        # Execute game logic for one frame based on AI action
+        # Run game frame
         if getattr(self, "human_playing", False):
             game_result = self.game.run_frame_play_vs_ai(action)
         else:
@@ -57,52 +163,45 @@ class AirHockeyEnv(gym.Env):
         terminated = False
         truncated = False
 
-        # --- TERMINAL STATES ---
-        # Large rewards/penalties for scoring or conceding a goal
+        # Check for terminal states (goals)
         if game_result == 1:
-            reward += 20.0
+            reward += 30.0
             terminated = True
         elif game_result == -1:
-            reward -= 25.0
+            reward -= 40.0
             terminated = True
 
-        # Helper variables for positions and goal targets
+        # Get necessary positions as vectors
         puck_curr = pg.math.Vector2(self.game.puck.puck_pos_curr)
-        puck_last = pg.math.Vector2(self.game.puck.puck_pos_last)
         player_pos_last = pg.math.Vector2(self.game.player.get_player_last_pos())
         player_pos_curr = pg.math.Vector2(self.game.player.get_player_pos())
 
         w, h = Screen_helper.get_size()
         opponent_goal = pg.math.Vector2(0, h / 2)
-        own_goal = pg.math.Vector2(w, h / 2)
 
-        # =========================================================
-        # --- 1. POSITIONING & SHADOWING
-        # Encourages the AI to stay between the puck and its own goal
-        # =========================================================
+        # 1. POSITIONING & SHADOWING
         dir_to_puck = puck_curr - opponent_goal
+        new_dist = 0
 
         if dir_to_puck.length() > 0:
-            # Target a spot slightly behind the puck to prepare for a hit
-            target_pos = puck_curr + dir_to_puck * 35
+            # Normalize vector to avoid extreme coordinates
+            dir_to_puck_norm = dir_to_puck.normalize()
+            target_pos = puck_curr + dir_to_puck_norm * 35
 
             old_dist = player_pos_last.distance_to(target_pos)
             new_dist = player_pos_curr.distance_to(target_pos)
 
-            # Reward moving toward the optimal hitting position
+            # Reward moving towards the target position
             if new_dist < old_dist:
-                reward += 0.25
+                reward += 0.45
             else:
-                reward -= 0.2
+                reward -= 0.6
 
-        # Penalize if the AI is further from its goal than the puck (being out of position)
+        # Penalize if AI is out of position
         if player_pos_curr.distance_to(opponent_goal) < puck_curr.distance_to(opponent_goal):
-            reward -= 1
+            reward -= 2.5
 
-        # =========================================================
-        # --- 2. COLLISION & ACCURACY
-        # Handles the actual hit logic and rewards "aiming"
-        # =========================================================
+        # 2. COLLISION & ACCURACY
         if self.hit_cooldown > 0:
             self.hit_cooldown -= 1
 
@@ -112,11 +211,11 @@ class AirHockeyEnv(gym.Env):
         )
 
         if collision:
-            # Penalize rapid multi-collisions (flickering/glitching)
+            # Prevent reward spamming on multi-collisions
             if self.hit_cooldown > 0:
-                reward -= 5.0
+                reward -= 7.0
             else:
-                self.hit_cooldown = 8  # Prevent reward spamming
+                self.hit_cooldown = 4
 
                 puck_dir = pg.math.Vector2(self.game.puck.get_puck_vect()[0])
                 puck_speed = self.game.puck.get_puck_vect()[1]
@@ -124,45 +223,44 @@ class AirHockeyEnv(gym.Env):
                 if puck_dir.length() > 0:
                     puck_vel = puck_dir.normalize() * puck_speed
                     to_opponent_goal = opponent_goal - puck_curr
-
-                    # Calculate dot product to see if the hit is aimed at the goal
                     alignment = puck_vel.normalize().dot(to_opponent_goal.normalize())
 
-                    if alignment > 0.7:  # Hit is well-aimed towards the opponent's goal
-                        reward += 10.0
-                        reward += puck_speed * 0.3  # Bonus for powerful shots
-                    elif alignment < 0:  # Hit sent the puck backwards
-                        reward -= 8.0
 
-        # =========================================================
-        # --- 3. MOVEMENT CONSTRAINTS
-        # Prevents "lazy" behavior and boundary hugging
-        # =========================================================
+                    if alignment > 0.7:
+                        base_hit_reward = 5.0
+                        speed_bonus = puck_speed * 3
+                        reward += base_hit_reward + speed_bonus
 
-        # Penalize standing still
-        move = player_pos_curr.distance_to(player_pos_last)
-        if move < 2:
-            reward -= 2
+                        if puck_speed > 15.0:
+                            reward += 20.0
 
-        # Penalty for hugging walls or staying in corners
+                    elif alignment < 0:
+                        reward -= 15.0 + (puck_speed * 0.2)
+
+        # 3. MOVEMENT CONSTRAINTS
+        # Penalize standing still only if far from target
+        if new_dist > 20:
+            move = player_pos_curr.distance_to(player_pos_last)
+            if move < 2:
+                reward -= 2
+
+        # Penalize hugging walls
         (top, bottom, left, right, _) = self.game.board.get_board_bounds()
         size = self.game.player.get_player_size()
 
         if player_pos_curr.x >= right - size - 5:
-            reward -= 0.2
+            reward -= 1
         if player_pos_curr.y <= top + 5 or player_pos_curr.y >= bottom - 5:
-            reward -= 0.1
+            reward -= 0.5
 
-        # --- TIME LIMIT ---
+        # Check time limit
         if self.current_step >= self.max_steps:
             reward -= 8.0
             truncated = True
 
-        # Clip rewards to stabilize training
-        reward = max(min(reward, 15), -15)
+        reward = max(min(reward, 100), -40)
 
-        observation = self._get_obs()
-        return observation, reward, terminated, truncated, {}
+        return self._get_obs(), reward, terminated, truncated, {}
 
     def render(self):
         for event in pg.event.get():
@@ -199,6 +297,7 @@ class AirHockeyEnv(gym.Env):
         opp_vel_x = opp_pos[0] - opp_last[0]
         opp_vel_y = opp_pos[1] - opp_last[1]
 
+        # Normalize observations
         obs = np.array(
             [
                 float(p_pos[0]) / w,
