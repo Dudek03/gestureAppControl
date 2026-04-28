@@ -3,9 +3,9 @@ import threading
 import numpy as np
 import time
 import sys
-import mediapipe as mp
 
 try:
+    import mediapipe as mp
     mp_hands = mp.solutions.hands
     print("--- Success: MediaPipe loaded ---")
 except Exception as e:
@@ -23,7 +23,8 @@ class HandTracker:
             min_tracking_confidence=conf
         )
         
-        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+       # self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) ----- WINDOWS
+        self.cap = cv2.VideoCapture(0) # ------ MACBOOK
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
         
