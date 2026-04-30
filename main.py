@@ -24,7 +24,6 @@ def draw_text(surface, text, font, color, center):
 
 
 def main_menu(screen, w, h, clock):
-    # Czcionki zostawiamy stałe, by uniknąć zniekształceń, ale możesz je też skalować!
     font_title = pg.font.SysFont("Arial", 50, bold=True)
     font_subtitle = pg.font.SysFont("Arial", 25, bold=True)
     font_btn = pg.font.SysFont("Arial", 22)
@@ -43,23 +42,20 @@ def main_menu(screen, w, h, clock):
         btn_h = max(40, int(curr_h * 0.08))
         gap = int(curr_w * 0.02)
 
-        y_title = int(curr_h * 0.10)  # Tytuł na 10% wysokości
+        y_title = int(curr_h * 0.10)
 
-        y_g1_title = int(curr_h * 0.22)  # Grupa 1 na 22%
-        y_g1_btns = int(curr_h * 0.28)  # Przyciski G1 na 28%
+        y_g1_title = int(curr_h * 0.22)
+        y_g1_btns = int(curr_h * 0.28)
 
-        y_g2_title = int(curr_h * 0.42)  # Grupa 2 na 42%
+        y_g2_title = int(curr_h * 0.42)
         y_g2_btns = int(curr_h * 0.48)
 
-        y_g3_title = int(curr_h * 0.62)  # Grupa 3 (Ręka) na 62%
+        y_g3_title = int(curr_h * 0.62)
         y_g3_btns = int(curr_h * 0.68)
 
-        y_start = int(curr_h * 0.85)  # Przycisk start na samym dole (85%)
+        y_start = int(curr_h * 0.85)
         start_h = max(60, int(curr_h * 0.1))
 
-        # ==========================================
-        # TWORZENIE RESPONSYWNYCH HITBOXÓW (RECT)
-        # ==========================================
         btn_ai_rect = pg.Rect(curr_w // 2 - btn_w - gap, y_g1_btns, btn_w, btn_h)
         btn_bot_rect = pg.Rect(curr_w // 2 + gap, y_g1_btns, btn_w, btn_h)
 
@@ -73,12 +69,8 @@ def main_menu(screen, w, h, clock):
             curr_w // 2 - int(curr_w * 0.3), y_start, int(curr_w * 0.6), start_h
         )
 
-        # ==========================================
-        # RYSOWANIE MENU
-        # ==========================================
         draw_text(screen, "AIR HOCKEY", font_title, TEXT_COLOR, (curr_w // 2, y_title))
 
-        # --- WYBÓR PRZECIWNIKA ---
         draw_text(
             screen,
             "Wybierz przeciwnika:",
@@ -109,7 +101,6 @@ def main_menu(screen, w, h, clock):
         pg.draw.rect(screen, c_bot, btn_bot_rect, border_radius=10)
         draw_text(screen, "Skryptowany Bot", font_btn, TEXT_COLOR, btn_bot_rect.center)
 
-        # --- WYBÓR STEROWANIA ---
         draw_text(
             screen,
             "Wybierz sterowanie:",
@@ -142,7 +133,6 @@ def main_menu(screen, w, h, clock):
         pg.draw.rect(screen, c_hand, btn_hand_rect, border_radius=10)
         draw_text(screen, "Ręka (Kamera)", font_btn, TEXT_COLOR, btn_hand_rect.center)
 
-        # --- WYBÓR MODELU RĘKI ---
         if control_mode == "HAND":
             draw_text(
                 screen,
@@ -176,7 +166,6 @@ def main_menu(screen, w, h, clock):
             pg.draw.rect(screen, c_own, btn_own_rect, border_radius=10)
             draw_text(screen, "Własny Model", font_btn, TEXT_COLOR, btn_own_rect.center)
 
-        # --- START ---
         c_start = (
             COLOR_START_HOVER if btn_start_rect.collidepoint(mouse_pos) else COLOR_START
         )
@@ -212,10 +201,8 @@ def main_menu(screen, w, h, clock):
                 elif btn_hand_rect.collidepoint(mouse_pos):
                     control_mode = "HAND"
                 elif btn_start_rect.collidepoint(mouse_pos):
-                    # Zwracamy wszystkie TRZY zmienne!
                     return opponent_mode, control_mode, hand_model_mode
 
-                # Przyciski modelu klikalne tylko jeśli aktywna jest Ręka
                 if control_mode == "HAND":
                     if btn_mp_rect.collidepoint(mouse_pos):
                         hand_model_mode = "MEDIAPIPE"
@@ -274,7 +261,6 @@ def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
 
         screen_w, screen_h = Screen_helper.get_size()
 
-        # Wspólny kod dla HandTrackera (obie klasy mają te same metody!)
         if control_mode == "HAND" and tracker:
             if tracker.get_hand_visible():
                 env.current_hand_pos = tracker.get_position(
@@ -321,10 +307,8 @@ def main():
 
     w, h = Screen_helper.get_size()
 
-    # Odbieramy trzy zmienne z menu
     opp_mode, ctrl_mode, hand_mode = main_menu(screen, w, h, clock)
 
-    # Przekazujemy je dalej
     play_game(opp_mode, ctrl_mode, hand_mode, screen, clock)
 
 

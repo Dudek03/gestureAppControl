@@ -1,7 +1,5 @@
-from collections import deque
 import cv2
 import threading
-import numpy as np
 import time
 from ultralytics import YOLO
 

@@ -1,6 +1,5 @@
 import cv2
 import threading
-import numpy as np
 import time
 import sys
 
@@ -23,8 +22,7 @@ class HandTracker:
             min_tracking_confidence=conf
         )
         
-       # self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) ----- WINDOWS
-        self.cap = cv2.VideoCapture(0) # ------ MACBOOK
+        self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
         
