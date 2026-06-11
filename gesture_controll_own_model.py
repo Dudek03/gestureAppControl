@@ -15,7 +15,8 @@ class HandTracker:
         self.conf = conf
         self.imgsz = imgsz
 
-        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        #self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) ---windows
+        self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
 

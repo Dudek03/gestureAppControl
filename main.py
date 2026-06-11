@@ -237,7 +237,7 @@ def play_game(opponent_mode, control_mode, hand_model_mode, screen, clock):
     model = None
     if opponent_mode == "AI":
         print("Przeciwnik: Wyuczone AI")
-        model_path = "bestOneYet.zip "
+        model_path = "bestOneYet.zip"
         model = PPO.load(model_path, env=env)
     else:
         print("Przeciwnik: Skryptowany Bot")

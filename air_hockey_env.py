@@ -166,10 +166,10 @@ class AirHockeyEnv(gym.Env):
 
         # Check for terminal states (goals)
         if game_result == 1:
-            reward += 30.0
+            reward += 40.0
             terminated = True
         elif game_result == -1:
-            reward -= 40.0
+            reward -= 60.0
             terminated = True
 
         # Get necessary positions as vectors
@@ -178,9 +178,9 @@ class AirHockeyEnv(gym.Env):
         player_pos_curr = pg.math.Vector2(self.game.player.get_player_pos())
 
         w, h = Screen_helper.get_size()
-        opponent_goal = pg.math.Vector2(0, h / 2)
+        opponent_goal = pg.math.Vector2(w, h / 2)
         # Założenie: gracz broni prawej strony boiska
-        own_goal = pg.math.Vector2(w, h / 2)
+        own_goal = pg.math.Vector2(0, h / 2)
 
         # 1. POSITIONING & SHADOWING
         dir_to_puck = puck_curr - opponent_goal
@@ -257,10 +257,10 @@ class AirHockeyEnv(gym.Env):
 
         # Check time limit
         if self.current_step >= self.max_steps:
-            reward -= 8.0
+            reward -= 16.0
             truncated = True
 
-        reward = max(min(reward, 100), -40)
+        reward = max(min(reward, 130), -80)
 
         return self._get_obs(), reward, terminated, truncated, {}
 
