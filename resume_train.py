@@ -10,8 +10,9 @@ env = AirHockeyEnv()
 env.reset()
 
 # 1. TUTAJ WPISUJESZ NUMER MODELU DO ZAŁADOWANIA
-STARTING_STEP = 4900000
+STARTING_STEP = 9710000
 model_path = f"{models_dir}/{STARTING_STEP}.zip"
+#model_path = f"bestOneYet.zip"
 
 # Ładowanie
 model = PPO.load(model_path, env=env, tensorboard_log=log_dir)
