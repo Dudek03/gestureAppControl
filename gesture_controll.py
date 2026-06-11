@@ -1,6 +1,5 @@
 import cv2
 import threading
-import numpy as np
 import time
 import sys
 
@@ -23,16 +22,13 @@ class HandTracker:
             min_tracking_confidence=conf
         )
         
-       # self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) ----- WINDOWS
-        self.cap = cv2.VideoCapture(0) # ------ MACBOOK
+        self.cap = cv2.VideoCapture(0)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.cap.set(cv2.CAP_PROP_FPS, 60)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
-        self.cam_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
-        self.cam_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
-
-        self.margin = 0.2           
-        self.smoothing_factor = 0.4 
+        self.margin = 0.2            
+        self.smoothing_factor = 0.2 
 
         self.hand_x = 0.5
         self.target_x = 0.5
@@ -46,12 +42,15 @@ class HandTracker:
         self.thread.start()
 
     def _update(self):
+        target_fps = 60
+        frame_duration = 1.0 / target_fps
+        
         while self.running:
-            for _ in range(2):
-                self.cap.grab()
+            start_time = time.time()
             
             success, frame = self.cap.read()
             if not success:
+                time.sleep(0.01)
                 continue
             
             frame = cv2.flip(frame, 1)
@@ -61,6 +60,7 @@ class HandTracker:
             if results.multi_hand_landmarks:
                 landmarks = results.multi_hand_landmarks[0]
                 node = landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+                
                 self.target_x = node.x
                 self.target_y = node.y
                 self.is_detected = True
@@ -70,7 +70,9 @@ class HandTracker:
             self.hand_x += (self.target_x - self.hand_x) * self.smoothing_factor
             self.hand_y += (self.target_y - self.hand_y) * self.smoothing_factor
             
-            time.sleep(0.001)
+            elapsed = time.time() - start_time
+            if elapsed < frame_duration:
+                time.sleep(frame_duration - elapsed)
 
     def get_position(self, target_width=1280, target_height=720):
         active_range = 1.0 - (2 * self.margin)

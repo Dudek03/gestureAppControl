@@ -1,7 +1,5 @@
-from collections import deque
 import cv2
 import threading
-import numpy as np
 import time
 from ultralytics import YOLO
 
@@ -22,8 +20,12 @@ class HandTracker:
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
 
-        self.cam_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 640
-        self.cam_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 480
+        # TRIK 1: Wymuszamy małą rozdzielczość na SAMEJ KAMERZE USB (odciąża to drastycznie CPU)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+
+        self.cam_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)) or 320
+        self.cam_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 240
 
         self.margin = 0.15
 
@@ -34,41 +36,58 @@ class HandTracker:
 
         self.is_detected = False
 
-        self.smoothing_factor = 0.4
+        # Zwiększamy ciut wygładzanie (0.1), aby przy rzadszej detekcji ruch nadal był płynny
+        self.smoothing_factor = 0.1 
 
         self.running = True
         self.thread = threading.Thread(target=self._update, daemon=True)
         self.thread.start()
 
     def _update(self):
+        target_fps = 60
+        frame_duration = 1.0 / target_fps
+        frame_counter = 0
+
         while self.running:
-            for _ in range(3):
-                self.cap.grab()
+            start_time = time.time()
 
             success, frame = self.cap.read()
             if not success:
+                time.sleep(0.01)
                 continue
 
             frame = cv2.flip(frame, 1)
+            frame_counter += 1
 
-            results = self.model.predict(
-                frame, conf=self.conf, imgsz=self.imgsz, stream=True, verbose=False
-            )
+            # TRIK 2: YOLO pracuje tylko co 3 klatkę! (To daje procesorowi gigantyczny luz)
+            if frame_counter % 3 == 0:
+                results = self.model.predict(
+                    frame, 
+                    conf=self.conf, 
+                    imgsz=self.imgsz, 
+                    stream=True, 
+                    verbose=False,
+                    half=True
+                )
 
-            for r in results:
-                if r.boxes and len(r.boxes) > 0:
-                    box = r.boxes[0].xyxy[0].cpu().numpy()
-                    self.target_x = (box[0] + box[2]) / 2
-                    self.target_y = (box[1] + box[3]) / 2
-                    self.is_detected = True
-                    break
-                else:
-                    self.is_detected = False
+                for r in results:
+                    if r.boxes and len(r.boxes) > 0:
+                        box = r.boxes[0].xyxy[0].cpu().numpy()
+                        self.target_x = (box[0] + box[2]) / 2
+                        self.target_y = (box[1] + box[3]) / 2
+                        self.is_detected = True
+                        break
+                    else:
+                        self.is_detected = False
 
+            # Wygładzanie załatwia płynność ruchu
             self.hand_x += (self.target_x - self.hand_x) * self.smoothing_factor
             self.hand_y += (self.target_y - self.hand_y) * self.smoothing_factor
 
-            time.sleep(0.001)
+            # Stabilizacja pętli
+            elapsed = time.time() - start_time
+            if elapsed < frame_duration:
+                time.sleep(frame_duration - elapsed)
 
     def get_position(self, target_width=1280, target_height=720):
         m_x = self.cam_width * self.margin
@@ -104,4 +123,3 @@ if __name__ == "__main__":
             time.sleep(0.01)
     except KeyboardInterrupt:
         tracker.stop()
-

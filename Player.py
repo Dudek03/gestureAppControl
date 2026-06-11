@@ -2,13 +2,12 @@ import pygame as pg
 
 from Screen_helper import Screen_helper
 from UI_settings import UI_settings
-from gesture_controll import HandTracker
 
 
 class Player:
     def __init__(self, side="left", is_ai=False):
         self.is_ai = is_ai
-        self.side = side  # "left" lub "right"
+        self.side = side
         self.screen = Screen_helper.get_screen()
         self.screen_size = Screen_helper.get_size()
         self.max_player_speed = 50

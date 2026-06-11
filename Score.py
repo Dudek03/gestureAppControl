@@ -1,7 +1,6 @@
 import pygame as pg
 
 from Screen_helper import Screen_helper
-from UI_settings import UI_settings
 
 
 class Score:

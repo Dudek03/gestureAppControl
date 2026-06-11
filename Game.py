@@ -115,34 +115,21 @@ class Game:
 
     def board_validation(self, pos, size):
         (top, bottom, left, right, _) = self.board.get_board_bounds()
-        # (goal_top, goal_bottom) = self.board.get_goal_y_range()
-        # goal_depth = self.board.get_goal_depth()
 
         p = list(pos)
 
-        # in_goal_y = (p[1] - size > goal_top) and (p[1] + size < goal_bottom)
 
         min_x = left + size
         max_x = right - size
-
-        """if in_goal_y:
-            min_x = left - goal_depth + size
-            max_x = right + goal_depth - size"""
 
         if p[0] < min_x:
             p[0] = min_x
         if p[0] > max_x:
             p[0] = max_x
 
-        """in_left_recess = p[0] < left + size
-        in_right_recess = p[0] > right - size"""
 
         min_y = top + size
         max_y = bottom - size
-
-        """if in_left_recess or in_right_recess:
-            min_y = goal_top + size
-            max_y = goal_bottom - size"""
 
         if p[1] < min_y:
             p[1] = min_y
@@ -191,8 +178,8 @@ class Game:
         o_pos = self.opponent.get_player_pos()
         mid_x = self.board.middle_line_start[0] + 20
         center_y = self.board.top + (self.board.board_size[1] / 2)
-        speed = 0.6  # was 0.8
-        slower_speed = 0.4  # was 0.5
+        speed = 0.6
+        slower_speed = 0.4
         vx, vy = 0, 0
 
         if p_pos[0] < mid_x:
